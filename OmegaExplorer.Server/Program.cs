@@ -595,8 +595,6 @@ public static class Program
     {
         application.UseCors(configurePolicy => configurePolicy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
-        application.UseDeveloperExceptionPage();
-
         if (StartMode != EnumStartMode.NSwag)
         {
             application.UseSerilogRequestLogging();
@@ -611,30 +609,19 @@ public static class Program
         application.UseAuthentication();
         application.UseRateLimiter();
 
-        if (StartMode >= EnumStartMode.Development)
+        if (application.Environment.IsDevelopment())
         {
             application.UseDeveloperExceptionPage();
+            application.UseSwagger();
+            application.UseSwaggerUI(c =>
+            {
+                c.DocExpansion(DocExpansion.None);
+                c.DefaultModelRendering(ModelRendering.Example);
+                c.EnableTryItOutByDefault();
+                c.SwaggerEndpoint($"/swagger/{API_VERSION}/swagger.json", "OmegaExplorer " + API_VERSION);
+            });
+            application.UseReDoc(c => { c.RoutePrefix = "doc"; });
         }
-
-        application.UseSwagger();
-        application.UseSwaggerUI(c =>
-        {
-            // Smaller display onscreen
-            c.DocExpansion(DocExpansion.None);
-
-            // Display the example JSON by default
-            c.DefaultModelRendering(ModelRendering.Example);
-
-            // Make it so you don't have to keep clicking "Try It Now" to use a WebApi method.
-            c.EnableTryItOutByDefault();
-
-            c.SwaggerEndpoint($"/swagger/{API_VERSION}/swagger.json", "OmegaExplorer " + API_VERSION);
-        });
-
-        application.UseReDoc(c =>
-        {
-            c.RoutePrefix = "doc"; // Optional: Specify the ReDoc route
-        });
         application.UseRouting();
 
         // Add a static file provider for the static directory
