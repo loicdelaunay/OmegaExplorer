@@ -7,7 +7,6 @@
 @inject JavascriptProvider JsProvider
 
 @using Blazored.LocalStorage
-@using OmegaExplorer.Client.Components.Audio
 @using OmegaExplorer.Client.Components.Blocks.Utilities
 @using OmegaExplorer.Client.Managers
 @using OmegaExplorer.Client.Services
@@ -25,8 +24,6 @@
 <MudDialogProvider/>
 <MudSnackbarProvider/>
 <MudTypographyProvider/>
-
-<GlobalAudioPlayer @ref="GlobalAudioPlayer"></GlobalAudioPlayer>
 
 <PageTitle>OmegaExplorer</PageTitle>
 
@@ -96,7 +93,6 @@
 
     public ResponseCycleState CycleState { get; set; }
 
-    public GlobalAudioPlayer GlobalAudioPlayer { get; set; }
 
     private bool _drawerOpen = true;
     private SidebarContainer? _sidebar = null!;
