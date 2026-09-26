@@ -1,0 +1,67 @@
+﻿@using OmegaExplorer.Client.Managers
+@using Global = OmegaExplorer.Client.Utilities.Const.Global
+@using Blazored.LocalStorage
+@using OmegaExplorer.Server.Extensions
+@using OmegaExplorer.Server.Utilities.Serializer
+@using Blazor.SubtleCrypto
+@inject ILocalStorageService LocalStorage
+@inject ISnackbar Snackbar
+@inject ICryptoService Crypto
+
+@code {
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserSettingsManager.Initialize(this);
+    }
+
+    public async Task Save(UserSettings userSettings)
+    {
+        string plainData = JsonSerializerManager.Serialize(userSettings);
+        CryptoResult? encrypted = await Crypto.EncryptAsync(plainData);
+
+        await LocalStorage.SetItemAsync(Global.KEY_USER_SETTINGS, encrypted.Value);
+    }
+
+    public async Task<UserSettings> Load()
+    {
+        string? encrypted = await LocalStorage.GetItemAsync<string>(Global.KEY_USER_SETTINGS);
+
+        // upgrade obsolete settings
+        try
+        {
+            UserSettings? obj = encrypted.JsonDeserialize<UserSettings>();
+            if (obj != null)
+            {
+                Console.WriteLine("new user settings value because old one is obsolete : " + encrypted);
+                UserSettings newValue = new();
+                await Save(newValue);
+                return newValue;
+            }
+        }
+        catch
+        {
+            // ignored
+        }
+
+        if (string.IsNullOrEmpty(encrypted))
+        {
+            Console.WriteLine("new user settings value");
+            await Save(new UserSettings());
+            return await Load();
+        }
+
+        string? decrypted = await Crypto.DecryptAsync(encrypted);
+
+        if (string.IsNullOrEmpty(decrypted))
+        {
+            Console.WriteLine("Decrypted value is null");
+            return null;
+        }
+
+        UserSettings userSettings = JsonSerializerManager.Deserialize<UserSettings>(decrypted);
+
+        return userSettings;
+    }
+
+}

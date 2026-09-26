@@ -1,0 +1,231 @@
+﻿@using Blazor.Diagrams.Core.Models.Base
+@using OmegaExplorer.Client.Components.Diagram.Nodes
+@using OmegaExplorer.Client.Components.Diagram.Nodes.Models
+@using OmegaExplorer.Client.Components.Maps.Drivers
+@using OmegaExplorer.Shared.Filters
+@using OmegaExplorer.Server.Extensions
+
+@using PointerEventArgs = Blazor.Diagrams.Core.Events.PointerEventArgs
+@using Serilog
+@using OmegaExplorer.Client.Providers.Hubs
+
+@inject IJSRuntime JsRuntime
+@inject ISnackbar Snackbar
+@inject CycleHubProvider CycleHubProvider
+@inject IDynamicMapMemory DynamicMapMemory
+
+@implements IDisposable
+
+@typeparam T where T : DynamicMapDriver
+
+@if(_exception != null)
+{
+    <MudAlert Severity="Severity.Error">@_exception.Message</MudAlert>
+}else if (Driver?.Exception != null)
+{
+    <MudAlert Severity="Severity.Error">@Driver.Exception.Message</MudAlert>
+}
+else
+{
+    @if (MainLayout.UserSettings.IsDev)
+    {
+        <MudStack Spacing="0">
+        @if (Driver != null)
+        {
+            <MudText Typo="Typo.caption">Id : @Id</MudText>
+            <MudText Typo="Typo.caption">Driver position : @Driver.X : @Driver.Y</MudText>
+            <MudText Typo="Typo.caption">Driver search : @Driver.XSearch : @Driver.YSearch</MudText>
+            <MudText Typo="Typo.caption">Driver search : @Driver.XSearch : @Driver.YSearch</MudText>
+            <MudText Typo="Typo.caption">Driver offset : @Driver.XMapOffset : @Driver.YMapOffset</MudText>
+            <MudText Typo="Typo.caption">Nodes loaded : @Driver.Diagram.Nodes.Count</MudText>
+            <MudText Typo="Typo.caption">Pan : @_diagram.Pan</MudText>
+
+            @if(Driver.Exception != null)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Error">Exception : @Driver.Exception</MudText>
+            }
+        }
+        <MudText Typo="Typo.caption">Filters : @Filter.ToStringSerialized()</MudText>
+        </MudStack>
+    }
+
+    <div @ref="_diagramContainer" class="diagram-container">
+        <CascadingValue Value="_diagram" IsFixed="true">
+            <DiagramCanvas>
+                <Widgets>
+                    <GridWidget Size="30" Mode="GridMode.Point" BackgroundColor="rgb(10 25 50)"/>
+                    <NavigatorWidget Width="200" Height="120"
+                                     Class="border border-black absolute"
+                                     Style="bottom: 15px; right: 15px;"/>
+                </Widgets>
+            </DiagramCanvas>
+        </CascadingValue>
+    </div>
+}
+
+
+@code {
+
+    [Parameter]
+    public EventCallback<DynamicMap<T>> OnInitialized { get; set; }
+
+    [Parameter]
+    public DynamicDriverFilter Filter { get; set; } = new();
+
+    public T? Driver;
+
+    private BlazorDiagram? _diagram;
+
+    /// <summary>
+    /// Exception managed by the dynamic map
+    /// </summary>
+    private Exception? _exception;
+
+    private ElementReference _diagramContainer;
+
+    public string Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Log.Logger.Information($"[{nameof(DynamicMap<T>)}] : initializing dynamic map with preloaded filter {Filter}...");
+        DynamicMapDriver? driver = DynamicMapDriverManager.GetByType(typeof(T));
+
+        CycleHubProvider.OnCycleEnded += CycleHubProviderOnOnCycleEnded;
+        CycleHubProvider.OnCycleStarted += CycleHubProviderOnOnCycleStarted;
+
+        if (driver == null)
+        {
+            _exception = new Exception($"Driver not found for type {typeof(T).Name} please check if registered in DynamicMapDriverManager");
+            return;
+        }
+
+        SetId();
+        InitializeDiagram();
+
+        await ApiAuth.AwaitConnection();
+
+        //Loading driver
+        Log.Logger.Information($"[{nameof(DynamicMap<T>)}] : loading driver with filter - {Filter}");
+        Driver = (T) driver;
+        await Driver.Initialize(_diagram, Filter);
+        Driver.OnStateHasChanged += ForceStateHasChanged;
+
+        await base.OnInitializedAsync();
+        OnInitialized.InvokeAsync(this);
+
+        Log.Logger.Information($"[{nameof(DynamicMap<T>)}] : initialized dynamic map");
+    }
+
+    private void SetId()
+    {
+        string name = typeof(T).Name;
+
+        string idValue = name + Filter.ToStringSerialized();
+        Id = idValue.GetHashCode().ToString();
+    }
+
+    private async void CycleHubProviderOnOnCycleStarted()
+    {
+        await InternalUpdate("cycle started");
+    }
+
+    private async void CycleHubProviderOnOnCycleEnded()
+    {
+        //Ignore
+    }
+
+    private async Task InternalUpdate(string reason = "unknown")
+    {
+        Console.WriteLine($"[DynamicMap] : internal update called, reason is {reason}");
+        await Driver.Load();
+        StateHasChanged();
+    }
+
+    private async Task InitializeDiagram()
+    {
+        _diagram = new BlazorDiagram(
+                                     new BlazorDiagramOptions
+                                     {
+                                         Zoom =
+                                         {
+                                             Inverse = true,
+                                             Maximum = 2,
+                                             Minimum = 0.3
+                                         },
+                                         GridSnapToCenter = false,
+                                         Virtualization =
+                                         {
+                                             Enabled = true
+                                         }
+                                     });
+
+        _diagram.RegisterComponent<NodeModelMapUniverseSearch, NodeMapUniverseSearch>();
+        _diagram.RegisterComponent<NodeModelMapGalaxySearch, NodeMapGalaxySearch>();
+        _diagram.RegisterComponent<NodeModelMapStarClusterSearch, NodeMapStarClusterSearch>();
+
+        //Retrive map memory
+        DynamicMapInfo? mapInfo = await DynamicMapMemory.GetMapPositionAsync(Id);
+
+        if (mapInfo != null)
+        {
+            _diagram.SetPan(mapInfo.PanX, mapInfo.PanY);
+            _diagram.SetZoom(mapInfo.Zoom);
+        }
+
+        _diagram.PointerUp += DiagramOnPointerUp;
+    }
+
+    private async void DiagramOnPointerUp(Model? arg1, PointerEventArgs arg2)
+    {
+        SavePan();
+    }
+
+    private async Task SavePan()
+    {
+        try
+        {
+            //Save the pan for this dynamic map in local browser storage
+            StateHasChanged();
+
+            //Set memory
+            await DynamicMapMemory.SaveMapPositionAsync(Id, _diagram.Pan.X, _diagram.Pan.Y, _diagram.Zoom);
+        }
+        catch (Exception e)
+        {
+            Log.Logger.Error($"[{nameof(DynamicMap<T>)}] : error saving pan position : {e}");
+        }
+    }
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            WindowResized();
+            DotNetObjectReference<DynamicMap<T>> objRef = DotNetObjectReference.Create(this);
+            await JsRuntime.InvokeVoidAsync("registerResizeHandler", objRef);
+            await JsRuntime.InvokeVoidAsync("updateDiagramExtension", _diagramContainer);
+        }
+    }
+
+    [JSInvokable]
+    public void WindowResized()
+    {
+        Log.Logger.Information($"[{nameof(DynamicMap<T>)}] : window resized");
+        Driver?.UpdateOffset();
+    }
+
+
+    public void ForceStateHasChanged()
+    {
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        CycleHubProvider.OnCycleEnded -= CycleHubProviderOnOnCycleEnded;
+        CycleHubProvider.OnCycleStarted -= CycleHubProviderOnOnCycleStarted;
+
+        _diagram.PointerUp -= DiagramOnPointerUp;
+    }
+
+}

@@ -1,0 +1,182 @@
+﻿@page "/star-system/{StarSystemId:guid}"
+
+@using OmegaExplorer.Client.Models.Card.Definition
+@using OmegaExplorer.Shared.Filters
+@using OmegaExplorer.Client.Providers.Hubs
+@using OmegaExplorer.Client.Utilities.Dialog
+@using OmegaExplorer.Client.Utilities.Extensions
+@using OmegaExplorer.Server.Extensions
+@using OmegaExplorer.Client.Utilities.Resources
+
+@inject ISnackbar Snackbar;
+@inject IDialogService DialogService;
+@inject CycleHubProvider CycleHubProvider;
+
+@implements IDisposable;
+
+<Header Title="@_title" Subtitle="Manage your system and infrastructure"></Header>
+<CheckConnection></CheckConnection>
+
+<BreadcrumbsMap @ref="_breadcrumbsMap"></BreadcrumbsMap>
+
+@if (_starSystem == null)
+{
+    <MudProgressCircular Indeterminate="true" Color="Color.Primary"></MudProgressCircular>
+}
+else
+{
+    <MudStack Class="w-100" Row="true">
+        <MudPaper Class="w-100 pa-2 ma-2" Outlined="true">
+            <MudText>Name : @_starSystem.Name</MudText>
+            <MudText>Stability : </MudText>
+            <MudText>Size : @_starSystem.Size</MudText>
+            <MudText>Slots count : @_starSystem.Slots</MudText>
+
+            <MudText>Living capacities : @CountLivingSpecies().Humanify() / @_starSystem.MaxLivingSpecies.Humanify()</MudText>
+            <Stack Horizontal="true">
+            @foreach (ResponseSpeciesAmount? speciesData in _starSystem.SpeciesData)
+            {
+                <BlockSpeciesData SpeciesData="speciesData"></BlockSpeciesData>
+            }
+            </Stack>
+
+            <Stack Horizontal="true">
+            @foreach(ResponseModifierResource? modifier in _starSystem.Modifiers)
+            {
+                @** WTF ? **@
+                if (modifier == null)
+                {
+                    continue;
+                }
+
+                <BlockModifier Modifier="modifier"></BlockModifier>
+            }
+            </Stack>
+
+            @if (_starSystem.Owner == null)
+            {
+                <MudText>Not owned</MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.body1" Color="Color.Primary">Owner : @_starSystem.Owner.Name</MudText>
+            }
+        </MudPaper>
+        <PreviewSystem StarSystem="_starSystem"></PreviewSystem>
+    </MudStack>
+
+    <MudDivider Class="pa-2 ma-2" DividerType="DividerType.FullWidth"></MudDivider>
+
+    @if (_starSystem.IsOwner())
+    {
+        <DynamicCardStack Filter="_filter" @ref="_dynamicCardStack" TCardDefinition="CardDefinitionBuilding" OnCardDeleted="OnBuildingDeleted">
+            <MudIconButtonWithLabel Label="Build" Color="Color.Primary" Icon="@ResourceIcon.BUILD" OnClick="CallBuild"></MudIconButtonWithLabel>
+            <MudIconButtonWithLabel Label="Action" Color="Color.Primary" Icon="@ResourceIcon.ACTIONS" OnClick="CallActions"></MudIconButtonWithLabel>
+        </DynamicCardStack>
+    }
+
+    <MudButton Color="Color.Warning" Variant="Variant.Filled" OnClick="CallDebug">Debug</MudButton>
+}
+
+
+@code {
+    [Parameter]
+    public Guid StarSystemId { get; set; }
+
+    private string _title = "System loading...";
+
+    private ResponseStarSystem? _starSystem;
+
+    private DynamicCardStack<CardDefinitionBuilding> _dynamicCardStack;
+
+    private readonly DynamicDriverFilter _filter = new();
+
+    private BreadcrumbsMap _breadcrumbsMap;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ApiAuth.AwaitConnection();
+
+        CycleHubProvider.OnCycleStarted += CycleStarted;
+
+        _filter.AddFilterById(StarSystemId);
+        await Update();
+
+        await _breadcrumbsMap.Initialize(_starSystem);
+
+        await base.OnInitializedAsync();
+    }
+
+    private void CycleStarted()
+    {
+        Update();
+    }
+
+    private async Task Update()
+    {
+        _starSystem = await ApiManager.Client.GetStarSystemByIdAsync(StarSystemId);
+        _title = "System : " + _starSystem.Name;
+
+        StateHasChanged();
+    }
+
+    private async void CallBuild()
+    {
+        if (_starSystem == null)
+        {
+            Snackbar.Add("No system selected", Severity.Error);
+            return;
+        }
+
+        IDynamicItemBuilding? blueprint = await MainLayout.Instance.DialogTemplates.OpenPicker<CardDefinitionBlueprintBuilding, IDynamicItemBuilding>();
+
+        if (blueprint == null)
+        {
+            return;
+        }
+
+        await ApiManager.Client.CreateBuildingOnSystemAsync(StarSystemId, blueprint.Index);
+        _dynamicCardStack.Get();
+        await Update();
+    }
+
+    private void CallDebug()
+    {
+        MainLayout.Instance.DialogTemplates.OpenDialogDebug(_starSystem);
+    }
+
+    private async Task CallActions()
+    {
+        DialogOptions options = DialogOptionTemplates.DefaultCustomDialogOptions(MaxWidth.Large, true);
+
+        DialogParameters parameters = new()
+        {
+            [nameof(DialogStarSystemActions.StarSystem)] = _starSystem,
+        };
+
+        IDialogReference dialog = await DialogService.ShowAsync<DialogStarSystemActions>(string.Empty, parameters, options);
+
+        DialogResult? result = await dialog.Result;
+    }
+
+    private async Task OnBuildingDeleted()
+    {
+        await Update();
+    }
+
+    public long CountLivingSpecies()
+    {
+        if (_starSystem == null)
+        {
+            return 0;
+        }
+
+        return _starSystem.Species.Sum(x => x.Value);
+    }
+
+    public void Dispose()
+    {
+        CycleHubProvider.OnCycleStarted -= CycleStarted;
+    }
+
+}

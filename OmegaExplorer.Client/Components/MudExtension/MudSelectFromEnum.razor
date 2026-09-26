@@ -1,0 +1,44 @@
+﻿@using Origin = MudBlazor.Origin
+@typeparam TItem  
+
+<MudSelect Variant="Variant.Outlined" Label="@Label" @bind-Value="Value" AnchorOrigin="Origin.BottomCenter">
+    @foreach (TItem item in Enum.GetValues(enumType: typeof(TItem)))
+    {
+        <MudSelectItem Value="@item">@Enum.GetName(enumType: typeof(TItem), value: item)</MudSelectItem>
+    }
+</MudSelect>
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+
+    [Parameter]
+    public EventCallback<TItem> ValueChanged { get; set; }
+
+    [Parameter] public string Label { get; set; } = "Shared";
+
+    private TItem _value;
+
+    [Parameter]
+    public TItem Value
+    {
+        get => _value;
+        set
+        {
+            if (!EqualityComparer<TItem>.Default.Equals(x: value, y: _value))
+            {
+                _value = value;
+                ValueChanged.InvokeAsync(arg: value);
+            }
+        }
+    }
+
+    protected override Task OnInitializedAsync()
+    {
+        Console.WriteLine(value: typeof(TItem));
+        Console.WriteLine(value: Enum.GetValues(enumType: typeof(TItem)));
+        return base.OnInitializedAsync();
+    }
+
+}

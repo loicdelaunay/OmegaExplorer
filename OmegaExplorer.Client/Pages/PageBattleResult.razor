@@ -1,0 +1,124 @@
+﻿@page "/battle/result/{BattleId:guid}"
+
+@using OmegaExplorer.Client.Providers.Hubs
+@using OmegaExplorer.Client.Utilities.Extensions
+
+@using Position = MudBlazor.Position
+@using Serilog
+@using OmegaExplorer.Server.Extensions
+
+@inject CycleHubProvider CycleHubProvider
+@inject NavigationManager NavigationManager
+
+@implements IDisposable
+
+<Header Title="Battle Result" Subtitle="@_getSubTitle()"></Header>
+<CheckConnection></CheckConnection>
+
+@if (Battle == null)
+{
+    <MudText>Loading...</MudText>
+}
+else
+{
+    @if (Battle.Result == null)
+    {
+        <MudText>Loading result...</MudText>
+    }
+    else
+    {
+        <MudStack>
+            @** VICTORY IMAGE**@
+            <MudCard Class="pa-4">
+                <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center">
+                    <MudStack Spacing="1">
+                        <BlockVictoryDefeat IsVictory="true"></BlockVictoryDefeat>
+                        <MudStack Spacing="0">
+                            <MudText>For battle @Battle.Name | @Battle.CurrentCycle cycles</MudText>
+                            <MudText Typo="Typo.caption">start at turn @Battle.StartAtCycle end at
+                                turn @(Battle.StartAtCycle + Battle.EndAtCycle)</MudText>
+                        </MudStack>
+                    </MudStack>
+
+                    <MudStack>
+                        <Stack Horizontal="true" Wrap="true" Gap="35">
+                            @foreach (ResponseBattleRewardResult? reward in Battle.Result.Rewards.Where(reward => reward.PlayerId == ApiAuth.UserConnected.Id))
+                            {
+                                <BlockAddGameResource Index="reward.IndexResource"
+                                                   Amount="@reward.Amount"></BlockAddGameResource>
+                            }
+                        </Stack>
+                    </MudStack>
+
+                    <MudDivider></MudDivider>
+
+                    <MudStack>
+                        <Stack Horizontal="true" Gap="5">
+                            @foreach (ResponseSpaceship? spaceship in Battle.Spaceships)
+                            {
+                                <MudStack>
+                                    <PreviewSpaceship IsFluid="true" Width="300"
+                                                      Spaceship="spaceship"></PreviewSpaceship>
+                                    <MudText>@spaceship.Name</MudText>
+                                </MudStack>
+                            }
+                        </Stack>
+                    </MudStack>
+                </MudStack>
+            </MudCard>
+
+            <BlockBattleHistory Battle="Battle"></BlockBattleHistory>
+        </MudStack>
+    }
+}
+
+@code {
+
+    [Parameter]
+    public Guid BattleId { get; set; }
+
+    public ResponseBattle? Battle { get; set; }
+
+    private string _getSubTitle()
+    {
+        if (Battle == null)
+        {
+            return "Battle is loading...";
+        }
+
+        return $"Battle at {Battle.Name}";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ApiAuth.AwaitConnection();
+        await Update();
+        await base.OnInitializedAsync();
+    }
+
+    private async Task Update()
+    {
+        Battle = await ApiManager.Client.GetBattleByIdAsync(BattleId);
+
+        if (Battle == null)
+        {
+            Log.Logger.Information($"[{nameof(PageBattle)}] : battle {BattleId} not found, redirecting to battles page");
+            NavigationManager.NavigateTo("/battles");
+            return;
+        }
+
+        foreach (ResponseSpaceship? spaceship in Battle.Spaceships)
+        {
+            ResponseBlueprintSpaceship? blueprint = await ApiManager.Client.GetSpaceshipBlueprintBySpaceshipIdAsync(spaceship.Id);
+            spaceship.Blueprint = blueprint;
+        }
+
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        // TODO release managed resources here
+    }
+
+}

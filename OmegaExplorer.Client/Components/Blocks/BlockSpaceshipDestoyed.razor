@@ -1,0 +1,31 @@
+﻿<MudCard Class="pa-2 ma-2">
+    <MudStack>
+        <MudChip T="string" Color="Color.Error">Destroyed</MudChip>
+
+        <MudText Typo="Typo.caption">@Spaceship.DestroyedQuantityDamageToRepair points damages remaining</MudText>
+
+        @if (Spaceship.CycleWhenRemove is not null)
+        {
+            <MudText Typo="Typo.caption">Completely destroyed in <b>@ComputeRemainingTurn()</b> turns</MudText>
+        }
+    </MudStack>
+</MudCard>
+
+@code {
+    [Parameter]
+    public ResponseSpaceship Spaceship { get; set; }
+
+    private long ComputeRemainingTurn()
+    {
+        if(Spaceship.CycleWhenRemove is null)
+        {
+            return 0;
+        }
+        
+        long currentCycle = MainLayout.Instance.CycleState.CycleCount;
+        long remainingTurn = (long)Spaceship.CycleWhenRemove - currentCycle;
+        
+        return remainingTurn;
+    }
+
+}

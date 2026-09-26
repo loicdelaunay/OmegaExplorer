@@ -1,0 +1,16 @@
+﻿@using OmegaExplorer.Client.Utilities.Extensions
+<MudPaper Outlined="true" Height="300px" Width="250px">
+    <MudStack Justify="Justify.SpaceBetween">
+        <MudStack AlignItems="AlignItems.Center">
+            <MudImage Width="200" Src="@Building.GetImage()"></MudImage>
+            <MudText>@Building.Name</MudText>
+        </MudStack>
+    </MudStack>
+</MudPaper>
+
+@code {
+
+    [Parameter]
+    public ResponseBuilding Building { get; set; } = null!;
+
+}

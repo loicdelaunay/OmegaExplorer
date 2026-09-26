@@ -1,0 +1,67 @@
+﻿@using OmegaExplorer.Client.Managers
+@using OmegaExplorer.Client.Utilities.Resources
+<MudDialog>
+    <DialogContent>
+        <Header Size="Size.Small" Title="Settings" Subtitle="Configure client" Icon="@ResourceIcon.SETTINGS"></Header>
+
+        <MudStack Spacing="3" Style="width: 100%" Row="true" AlignItems="AlignItems.Center">
+            <MudText>Dark / Light theme : </MudText>
+            <MudToggleIconButton @ref="_btnDarkLight" class="ml-4" ToggledChanged="value => OnDarkModeChanged(value: value)" Icon="@Icons.Material.Filled.ModeNight" Color="Color.Warning" ToggledIcon="@Icons.Material.Filled.LightMode" ToggledColor="Color.Warning"></MudToggleIconButton >
+        </MudStack>
+
+        <MudStack Spacing="3" Style="width: 100%" Row="true" AlignItems="AlignItems.Center">
+            <MudText>Developer mode : </MudText>
+            <MudSwitch @ref="_switchDev" Color="Color.Primary" T="bool" ValueChanged="value => OnDeveloperModeChanged(value: value)"/>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code{
+
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; }
+
+    private UserSettings _userSettings { get; set; }
+
+    private MudToggleIconButton _btnDarkLight;
+    private MudSwitch<bool> _switchDev;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _userSettings = await UserSettingsManager.GetUserSettings();
+        _btnDarkLight.Toggled = _userSettings.DarkMode;
+        _switchDev.Value = _userSettings.IsDev;
+
+        await base.OnInitializedAsync();
+    }
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async void OnDarkModeChanged(bool value)
+    {
+        Console.WriteLine("new dark mode value " + value);
+        _userSettings = await UserSettingsManager.GetUserSettings();
+        _userSettings.DarkMode = value;
+        UserSettingsManager.SetUserSettings(_userSettings);
+    }
+
+    private async void OnDeveloperModeChanged(bool? value)
+    {
+        if (value == null)
+        {
+            return;
+        }
+
+        Console.WriteLine("new developer value " + value);
+        _userSettings = await UserSettingsManager.GetUserSettings();
+        _userSettings.IsDev = (bool) value;
+        UserSettingsManager.SetUserSettings(_userSettings);
+    }
+
+}

@@ -1,0 +1,37 @@
+﻿@using OmegaExplorer.Client.Utilities.Resources
+<MudTooltip Text="@EffectType.ToString()">
+    <MudChip T="string" Color="@GetColor()" Size="Size.Medium">
+        <MudImage Style="min-width: 20px; min-height: 20px;" Width="20" Fluid="true" Src="@GetImage()"></MudImage>
+    </MudChip>
+</MudTooltip>
+
+@code {
+
+    [Parameter]
+    public EnumEffectType EffectType { get; set; }
+
+    private string GetImage()
+    {
+        return EffectType switch
+        {
+            EnumEffectType.Damage => ResourceImage.DAMAGE,
+            EnumEffectType.Undamage => ResourceImage.REPAIR,
+            EnumEffectType.Colonization => ResourceImage.COLONIZE,
+            EnumEffectType.Protect => ResourceImage.PROTECT,
+            _ => ResourceImage.UNKNOWN_RESOURCE
+        };
+    }
+
+    private Color GetColor()
+    {
+        return EffectType switch
+        {
+            EnumEffectType.Damage => Color.Error,
+            EnumEffectType.Undamage => Color.Success,
+            EnumEffectType.Colonization => Color.Primary,
+            EnumEffectType.Protect => Color.Tertiary,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
+
+}

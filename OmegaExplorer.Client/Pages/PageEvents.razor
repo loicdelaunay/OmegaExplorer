@@ -1,0 +1,20 @@
+﻿@page "/events"
+@using OmegaExplorer.Client.Models.Card.Definition
+
+<DynamicCardStack TCardDefinition="CardDefinitionEvent"></DynamicCardStack>
+
+@code {
+    private List<ResponseEvent> _events = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ApiAuth.AwaitConnection();
+        await base.OnInitializedAsync();
+    }
+    
+    private async Task Refresh()
+    {
+        return;
+    }
+
+}

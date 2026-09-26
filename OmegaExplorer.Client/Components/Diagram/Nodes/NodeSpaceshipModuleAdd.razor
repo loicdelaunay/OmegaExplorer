@@ -1,0 +1,18 @@
+﻿@using OmegaExplorer.Client.Components.Diagram.Nodes.Models
+@using OmegaExplorer.Client.Utilities.Resources
+<MudIconButtonWithLabel OnClick="OnClicked" Color="Color.Primary" Label="Add element" Icon="@ResourceIcon.ADD" RootStyle="module-add"></MudIconButtonWithLabel>
+
+@if (MainLayout.UserSettings.IsDev)
+{
+    <MudText Color="Color.Warning">@Node.X : @Node.Y</MudText>
+}
+
+@code {
+    [Parameter] public NodeModelSpaceshipModuleAdd Node { get; set; } = null!;
+    
+    private void OnClicked()
+    {
+        Node.OnClicked?.Invoke();
+    }
+
+}

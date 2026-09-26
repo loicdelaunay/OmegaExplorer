@@ -1,0 +1,52 @@
+﻿@using OmegaExplorer.Client.Managers
+@using OmegaExplorer.Client.Models.Card.Definition
+
+@using OmegaExplorer.Client.Utilities.Resources
+<MudDialog>
+    <DialogContent>
+        <Header Size="Size.Small" Title="Scenario" Subtitle="Scenario WIP" Icon="@ResourceIcon.MESSAGE" DebugObject="this" Dialog="true"></Header>
+
+        <BlockScenarioProgress OnScenarioProgressUpdate="OnUserScenarioUpdate" ScenarioProgress="ScenarioProgress"></BlockScenarioProgress>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code{
+
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public ResponseUserScenarioProgress ScenarioProgress { get; set; }
+
+    /// <summary>
+    /// If the scenario progress, throw event to update the scenario progress
+    /// </summary>
+    private bool _needUpdate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+
+    void Cancel()
+    {
+        if (_needUpdate)
+        {
+            MudDialog.Close(DialogResult.Ok(ScenarioProgress));
+        }
+        else
+        {
+            MudDialog.Cancel();
+        }
+    }
+
+    private void OnUserScenarioUpdate(ResponseUserScenarioProgress userScenarioProgress)
+    {
+        ScenarioProgress = userScenarioProgress;
+        _needUpdate = true;
+    }
+
+}

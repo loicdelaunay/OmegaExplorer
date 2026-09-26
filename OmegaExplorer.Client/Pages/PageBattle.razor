@@ -1,0 +1,261 @@
+﻿@page "/battle/{BattleId:guid}"
+
+@using OmegaExplorer.Client.Models
+@using OmegaExplorer.Client.Providers.Hubs
+
+@using OmegaExplorer.Client.Utilities.Resources
+@using Serilog
+@using Position = MudBlazor.Position
+
+@inject CycleHubProvider CycleHubProvider
+@inject NavigationManager NavigationManager
+
+@implements IDisposable
+
+<Header Title="Battle" Subtitle="@_getSubTitle()"></Header>
+<CheckConnection></CheckConnection>
+
+<MudToolBar>
+    <MudIconButtonWithLabel Icon="@ResourceIcon.DELETE" Color="Color.Error" Label="DELETE" OnClick="OnClickDeleteBattle"></MudIconButtonWithLabel>
+</MudToolBar>
+
+@if (_cycleComputing)
+{
+    <MudAlert Severity="Severity.Info">Cycle is processing...</MudAlert>
+}
+
+@if (Battle == null)
+{
+    <MudProgressCircular Indeterminate="true" Color="Color.Primary"/>
+}
+else
+{
+    <MudStack>
+        <MudStack Spacing="0" Class="mb-5">
+            <MudText Typo="Typo.caption">Id : @Battle.Id</MudText>
+            <MudText Typo="Typo.caption">Name : @Battle.Name</MudText>
+            <MudText Typo="Typo.caption">Spaceships : @Battle.Spaceships.Count</MudText>
+            <MudText Typo="Typo.caption">Current turn : @Battle.CurrentCycle</MudText>
+        </MudStack>
+        
+        <MudStack Row="true">
+            @if (SkillInput != null)
+            {
+                <BlockSkill Skill="@SkillInput.Skill"></BlockSkill>
+
+                @if (SkillTarget == null)
+                {
+                    <MudText>Please select target</MudText>
+                }
+                else
+                {
+                    <MudText>Target is @SkillTarget.Name</MudText>
+                }
+            }
+        </MudStack>
+
+        <MudGrid>
+            @*Allies*@
+            <MudItem xs="5">
+                @foreach (ResponseSpaceship spaceship in GetOwnedSpaceships())
+                {
+                    <BlockSpaceship Spaceship="spaceship" Blueprint="@spaceship.Blueprint" IsReadOnly="true"
+                                    Height="20vh" OnSkillClicked="OnSpaceshipSkillUse" CanSelectSkill="true" AutoCenter="true" RadarVisible="false"></BlockSpaceship>
+
+                    <MudText Typo="Typo.h6">@CurrentActions.Count / @spaceship.ActionPoints</MudText>
+
+                }
+            </MudItem>
+
+            @*Actions*@
+            <MudItem xs="2" Style="max-height: 50vh" Class="overflow-auto">
+                <MudCard Class="pa-2">
+                    <MudText Typo="Typo.h6">Action cycle @Battle.CurrentCycle</MudText>
+                    <DynamicStack>
+                        @foreach (ResponseActionInBattle action in CurrentActions)
+                        {
+                            <BlockActionInBattle BattleId="BattleId" ResponseActionInBattle="action" IsReadOnly="false" OnDeleted="OnDelete">
+                                
+                            </BlockActionInBattle>
+                        }
+                    </DynamicStack>
+                </MudCard>
+            </MudItem>
+
+            @*Enemies*@
+            <MudItem xs="5">
+                @foreach (ResponseSpaceship spaceship in GetEnemySpaceships())
+                {
+                    <BlockSpaceship Spaceship="spaceship" Blueprint="@spaceship.Blueprint" IsReadOnly="true"
+                                    Height="20vh" CanSelectSpaceship="@(SkillInput != null)" OnClicked="OnSpaceshipClicked"
+                                    Reverse="true" AutoCenter="true" RadarVisible="false"></BlockSpaceship>
+                }
+            </MudItem>
+        </MudGrid>
+        
+        <BlockBattleHistory Battle="Battle"></BlockBattleHistory>
+    </MudStack>
+}
+
+
+@code {
+
+    [Parameter]
+    public Guid BattleId { get; set; }
+
+    public ResponseBattle? Battle { get; set; }
+
+    /// <summary>
+    /// The current skill selection
+    /// </summary>
+    private SpaceshipSkillUse? SkillInput { get; set; }
+
+    /// <summary>
+    /// The current skill target
+    /// </summary>
+    private ResponseSpaceship? SkillTarget { get; set; }
+
+    private List<ResponseActionInBattle> CurrentActions { get; set; } = new();
+
+    private bool _cycleComputing;
+
+    private string _getSubTitle()
+    {
+        if (Battle == null)
+        {
+            return "Battle is loading...";
+        }
+
+        return $"Battle at {Battle.Name}";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ApiAuth.AwaitConnection();
+        await Update();
+        await base.OnInitializedAsync();
+
+        CycleHubProvider.OnCycleStarted += CycleHubProviderOnOnCycleStarted;
+    }
+
+    private async void CycleHubProviderOnOnCycleStarted()
+    {
+        await Update();
+    }
+
+    private async Task Update()
+    {
+        Battle = await ApiManager.Client.GetBattleByIdAsync(BattleId);
+
+        if (Battle == null)
+        {
+            Log.Logger.Information($"[{nameof(PageBattle)}] : battle {BattleId} not found, redirecting to battles page");
+            NavigationManager.NavigateTo("/battles");
+            return;
+        }
+        
+        //If battle is finished, we redirect to the battle result
+        if(Battle.Result != null)
+        {
+            Log.Logger.Information($"[{nameof(PageBattle)}] : battle {BattleId} is finished, redirecting to result page");
+            NavigationManager.NavigateTo($"/battle/result/{BattleId}");
+            return;
+        }
+        
+        CurrentActions = await ApiManager.Client.GetAllActionsInBattleByCurrentTurnAsync(BattleId);
+
+        foreach (ResponseSpaceship? spaceship in Battle.Spaceships)
+        {
+            ResponseBlueprintSpaceship? blueprint = await ApiManager.Client.GetSpaceshipBlueprintBySpaceshipIdAsync(spaceship.Id);
+            spaceship.Blueprint = blueprint;
+        }
+
+        StateHasChanged();
+    }
+
+    private List<ResponseSpaceship> GetOwnedSpaceships()
+    {
+        List<ResponseSpaceship> res = Battle.Spaceships.Where(s => s.OwnerId == ApiAuth.UserConnected.Id).ToList();
+        return res;
+    }
+
+    private List<ResponseSpaceship> GetAllySpaceships()
+    {
+        return new List<ResponseSpaceship>();
+    }
+
+    private List<ResponseSpaceship> GetEnemySpaceships()
+    {
+        List<ResponseSpaceship> res = Battle.Spaceships.Where(s => s.OwnerId != ApiAuth.UserConnected.Id).ToList();
+        return res;
+    }
+
+    private void OnSpaceshipSkillUse(SpaceshipSkillUse spaceshipSkill)
+    {
+        SkillInput = spaceshipSkill;
+        StateHasChanged();
+    }
+
+    private async Task OnSpaceshipClicked(ResponseSpaceship spaceship)
+    {
+        SkillTarget = spaceship;
+
+        if (SkillInput == null || SkillTarget == null)
+        {
+            return;
+        }
+
+        RequestCreateActionInBattle req = new RequestCreateActionInBattle()
+        {
+            BattleId = BattleId,
+            Turn = CurrentActions.Count,
+            SpaceshipId = SkillInput.Spaceship.Id,
+            SkillIndex = SkillInput.Skill.Index,
+            TargetIds = new List<Guid> {SkillTarget.Id}
+        };
+
+        try
+        {
+            ResponseActionInBattle? newAction = await ApiManager.Client.CreateActionInBattleAsync(req);
+            CurrentActions.Add(newAction);
+        }
+        catch (Exception e)
+        {
+            Log.Logger.Error(e, "Error while creating action");
+            MainLayout.Instance.ImplSnackbar.Add($"Error while creating action : {e.Message}", Severity.Error);
+        }
+
+        SkillInput = null;
+        SkillTarget = null;
+
+        StateHasChanged();
+    }
+
+    private async Task OnClickDeleteBattle()
+    {
+        try
+        {
+            await ApiManager.Client.DeleteBattleAsync(BattleId);
+            MainLayout.Instance.ImplSnackbar.Add("Battle deleted ! ", Severity.Success);
+            await Task.Delay(500);
+            NavigationManager.NavigateTo("/battles");
+        }
+        catch (Exception e)
+        {
+            Log.Logger.Error(e, "Error while deleting battle");
+            MainLayout.Instance.ImplSnackbar.Add($"Error while deleting battle : {e.Message}", Severity.Error);
+        }
+    }
+
+    private void OnDelete(BlockActionInBattle action)
+    {
+        CurrentActions.RemoveAll(a => a.Id == action.ResponseActionInBattle.Id);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        CycleHubProvider.OnCycleStarted -= CycleHubProviderOnOnCycleStarted;
+    }
+
+}

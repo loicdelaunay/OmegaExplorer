@@ -1,0 +1,44 @@
+﻿@page "/map/galaxy/{GalaxyId:guid}"
+
+@using OmegaExplorer.Client.Components.Maps.Drivers
+@using OmegaExplorer.Client.Models.Card.Definition
+@using OmegaExplorer.Shared.Filters
+
+<CheckConnection></CheckConnection>
+<Header title="Map galaxy" Subtitle="Navigate through the space !"></Header>
+
+<BreadcrumbsMap @ref="_breadcrumbsMap"></BreadcrumbsMap>
+
+<DynamicPageMap Id="@GalaxyId"
+                Filter="new DynamicDriverFilter().AddFilterById(GalaxyId)"
+                TDynamicMapDriver="DynamicMapDriverGalaxy" 
+                TCardDefinition="CardDefinitionStarCluster"
+                TCardDefinition2="CardDefinitionStarCluster">
+</DynamicPageMap>
+
+@code {
+    
+        [Parameter]
+        public Guid GalaxyId { get; set; }
+        
+        private BreadcrumbsMap _breadcrumbsMap;
+        
+        private ResponseGalaxy? _galaxy;
+        
+        protected override async Task OnInitializedAsync()
+        {
+            await ApiAuth.AwaitConnection();
+
+            await UpdateGalaxy();
+
+            await _breadcrumbsMap.Initialize(_galaxy);
+        }
+
+        private async Task UpdateGalaxy(bool forceUpdate = false)
+        {
+            if (_galaxy == null || forceUpdate)
+            {
+                _galaxy = await ApiManager.Client.GetGalaxyByIdAsync(GalaxyId);
+            }
+        }
+}

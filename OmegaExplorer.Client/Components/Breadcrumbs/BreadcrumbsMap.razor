@@ -1,0 +1,134 @@
+﻿@using Serilog
+
+@inject NavigationManager NavigationManager
+
+@if (_exception != null)
+{
+    <MudText Color="Color.Error">@_exception.Message</MudText>
+}
+else
+{
+    @if (_loading)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small"/>
+    }
+    else
+    {
+        <MudBreadcrumbs Items="_items" Separator=">">
+            <ItemTemplate Context="item">
+                <MudLink Style="font-size: smaller" Underline="Underline.Hover" Href="@item.Href">@item.Text</MudLink>
+            </ItemTemplate>
+        </MudBreadcrumbs>
+    }
+}
+
+@code {
+    private Exception? _exception;
+
+    private List<BreadcrumbItem> _items = new();
+
+    private bool _loading = true;
+    private string _url = string.Empty;
+
+    public async Task Initialize(ResponseStarSystem system)
+    {
+        string url = NavigationManager.Uri;
+        if (_url == url)
+        {
+            return;
+        }
+
+        _url = url;
+
+        Log.Logger.Information($"[{nameof(BreadcrumbsMap)}] : Initialize from {nameof(ResponseStarSystem)} : {system.Name}");
+        _items = new List<BreadcrumbItem>();
+        await LoadFromSystem(system);
+    }
+
+    public async Task Initialize(ResponseStarCluster starCluster)
+    {
+        string url = NavigationManager.Uri;
+        if (_url == url)
+        {
+            return;
+        }
+
+        _url = url;
+
+        Log.Logger.Information($"[{nameof(BreadcrumbsMap)}] : Initialize from {nameof(ResponseStarCluster)} : {starCluster.Name}"); 
+        _items = new List<BreadcrumbItem>();
+        await LoadFromStarCluster(starCluster);
+    }
+
+    public async Task Initialize(ResponseGalaxy galaxy)
+    {
+        string url = NavigationManager.Uri;
+        if (_url == url)
+        {
+            return;
+        }
+
+        _url = url;
+        
+        Log.Logger.Information($"[{nameof(BreadcrumbsMap)}] : Initialize from {nameof(ResponseGalaxy)} : {galaxy.Name}");
+
+        _items = new List<BreadcrumbItem>();
+        await LoadFromGalaxy(galaxy);
+    }
+
+    public async Task Initialize(ResponseUniverse universe)
+    {
+        string url = NavigationManager.Uri;
+        if (_url == url)
+        {
+            return;
+        }
+
+        _url = url;
+
+        Log.Logger.Information($"[{nameof(BreadcrumbsMap)}] : Initialize from {nameof(ResponseUniverse)} : {universe.Name}");
+        _items = new List<BreadcrumbItem>();
+        await LoadFromUniverse(universe);
+    }
+
+    private async Task LoadFromSystem(ResponseStarSystem system)
+    {
+        _items.Add(new BreadcrumbItem(system.Name, href: $"/star-system/{system.Id}"));
+
+        ResponseStarCluster? starCluster = await ApiManager.Client.GetStarClusterByIdAsync(system.SpatialLocation.StarClusterId);
+
+        await LoadFromStarCluster(starCluster);
+    }
+
+    private async Task LoadFromStarCluster(ResponseStarCluster starCluster)
+    {
+        _items.Add(new BreadcrumbItem(starCluster.Name, href: $"/map/star-cluster/{starCluster.Id}"));
+
+        ResponseGalaxy? galaxy = await ApiManager.Client.GetGalaxyByIdAsync(starCluster.SpatialLocation.GalaxyId);
+
+        await LoadFromGalaxy(galaxy);
+    }
+
+    private async Task LoadFromGalaxy(ResponseGalaxy galaxy)
+    {
+        _items.Add(new BreadcrumbItem(galaxy.Name, href: $"/map/galaxy/{galaxy.Id}"));
+
+        ResponseUniverse? universe = await ApiManager.Client.GetUniverseByIdAsync(galaxy.UniverseId);
+
+        await LoadFromUniverse(universe);
+    }
+
+    private Task LoadFromUniverse(ResponseUniverse universe)
+    {
+        _items.Add(new BreadcrumbItem(universe.Name, href: $"/map/universe/{universe.Id}"));
+        _loading = false;
+
+        _items.Reverse();
+        StateHasChanged();
+        
+        Log.Logger.Information($"[{nameof(BreadcrumbsMap)}] : Loaded");
+
+        return Task.CompletedTask;
+    }
+
+}

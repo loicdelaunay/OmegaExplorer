@@ -1,0 +1,63 @@
+﻿@page "/admin/functions"
+@using Serilog
+
+@inject ISnackbar Snackbar
+
+<CheckConnection></CheckConnection>
+<Header Title="Administration functions management" Subtitle="Call server functions with admin rights"></Header>
+
+<MudStack>
+    <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="OnGenerateMap">Regenerate map</MudButton>
+    <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="OnDeleteAllPirates">Delete all pirates</MudButton>
+    <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="OnClearCaches">Clear caches</MudButton>
+</MudStack>
+
+@code {
+
+    private  async Task OnGenerateMap()
+    {
+        if (!await MainLayout.Instance.DialogTemplates.OpenDialogConfirm())
+        {
+            return;
+        }
+        
+        try
+        {
+            await ApiManager.Client.GenerateMapAsync(true);
+            Snackbar.Add("Map generation done", Severity.Success);
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add($"An error occured while generating the map : {e.Message}", Severity.Error);
+            Log.Logger.Error(e, "An error occured while generating the map");
+            throw;
+        }
+    }
+
+    private async Task OnDeleteAllPirates()
+    {
+        try
+        {
+            await ApiManager.Client.DeleteAllPiratesAsync();
+            Snackbar.Add("All pirates deleted", Severity.Success);
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add($"An error occured while deleting all pirates : {e.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnClearCaches()
+    {
+        try
+        {
+            await ApiManager.Client.ClearCacheAsync();
+            Snackbar.Add("Caches cleared", Severity.Success);
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add($"An error occured while clearing caches : {e.Message}", Severity.Error);
+        }
+    }
+
+}

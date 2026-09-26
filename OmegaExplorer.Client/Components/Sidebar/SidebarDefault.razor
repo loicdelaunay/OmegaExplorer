@@ -1,0 +1,51 @@
+﻿@using OmegaExplorer.Client.Providers.Hubs
+@using OmegaExplorer.Client.Utilities.Resources
+@using Serilog
+@using Origin = MudBlazor.Origin
+@inject NotificationHubProvider NotificationHub;
+
+<MudNavLink Icon="@ResourceIcon.HOME" Href="/" Match="NavLinkMatch.All">Home</MudNavLink>
+<MudNavLink Icon="@ResourceIcon.MAP" Href="/map" Match="NavLinkMatch.All">Map</MudNavLink>
+<MudNavLink Icon="@ResourceIcon.PERSONALITIES" Href="/personalities" Match="NavLinkMatch.Prefix">Personalities
+</MudNavLink>
+<MudNavLink Icon="@ResourceIcon.QUESTS" Href="/quests" Match="NavLinkMatch.Prefix">Quests</MudNavLink>
+<MudNavLink Icon="@ResourceIcon.EVENTS" Href="/events" Match="NavLinkMatch.Prefix">Events</MudNavLink>
+
+<MudNavLink Icon="@ResourceIcon.SCENARIOS" Href="/scenarios" Match="NavLinkMatch.Prefix">
+    <!-- Display a badge with the number of scenarios if there are any -->
+    @if (NotificationHub?.Summary?.CountScenarios > 0)
+    {
+        <MudBadge Content="@NotificationHub.Summary.CountScenarios" Color="Color.Info" Origin="Origin.CenterLeft" BadgeClass="mx-2"></MudBadge>
+    }
+    Scenarios
+</MudNavLink>
+
+<MudNavLink Icon="@ResourceIcon.SYSTEMS" Href="/star-systems" Match="NavLinkMatch.Prefix">Systems Owned</MudNavLink>
+<MudNavLink Icon="@ResourceIcon.ATTACK" Href="/battles" Match="NavLinkMatch.Prefix">Battles</MudNavLink>
+<MudNavLink Icon="@ResourceIcon.FLEETS" Href="/spaceships" Match="NavLinkMatch.Prefix">Spaceships</MudNavLink>
+<MudNavLink Icon="@ResourceIcon.SPACESHIP_BLUEPRINT" Href="/blueprint-spaceship" Match="NavLinkMatch.Prefix">Spaceship
+    designer
+</MudNavLink>
+<MudNavLink Icon="@ResourceIcon.KNOWLEDGE" Href="/knowledge" Match="NavLinkMatch.Prefix">Knowledge</MudNavLink>
+<MudNavLink Icon="@ResourceIcon.CONTACT" Href="/contacts" Match="NavLinkMatch.Prefix">Contacts</MudNavLink>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        Log.Logger.Information($"[DEBUG {nameof(SidebarDefault)}] : sidebarDefault.OnInitializedAsync");
+        NotificationHub.OnNotificationSummaryChanged += OnNotificationSummaryChanged;
+        await base.OnInitializedAsync();
+    }
+
+    public void Dispose()
+    {
+        Log.Logger.Information($"[DEBUG {nameof(SidebarDefault)}] : sidebarDefault.Dispose");
+        NotificationHub.OnNotificationSummaryChanged -= OnNotificationSummaryChanged;
+    }
+
+    private void OnNotificationSummaryChanged(NotificationSummary summary)
+    {
+        Log.Logger.Information($"[{nameof(SidebarDefault)}] : sidebarDefault.OnNotificationSummaryChanged: {summary}");
+        StateHasChanged();
+    }
+}

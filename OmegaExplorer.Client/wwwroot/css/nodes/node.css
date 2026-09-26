@@ -1,0 +1,80 @@
+﻿.diagram-node:hover {
+    z-index: 1000 !important;
+}
+
+.node{
+}
+
+.node:hover {
+    min-width: 350px;
+}
+
+.node-container {
+    gap: 0 !important;
+}
+
+.node:hover > .node-detail {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+.node>.node-detail-hovered{
+    display: none;
+    visibility: collapse !important;
+}
+
+.node:hover>.node-detail-hovered{
+    display: block;
+    visibility: visible !important;
+}
+
+.node-description{
+    visibility: collapse !important;
+    height: 0 !important;
+    width: 0 !important;
+    transition: height 0.3s, width 0.3s;
+}
+
+.node:hover .node-description {
+    visibility: unset !important;
+    height: 150px !important;
+    width: 700px !important;
+}
+
+.node:hover .node-container {
+    gap: 12px !important;
+}
+
+.node-spaceship {
+    width: 100px;
+    height: 100px;
+}
+
+.node-map-group {
+    width: 120px;
+    height: 90px;
+}
+
+.node-map-group:hover {
+    width: 500px;
+    height: auto;
+}
+
+/* Apply a subtle halo effect to the selected node */
+/* Define pulse animation for selected node */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 5px rgba(0, 123, 255, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 0 20px rgba(0, 123, 255, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 0 5px rgba(0, 123, 255, 0.2);
+    }
+}
+
+/* Apply the pulse animation to the selected node */
+.node-selected {
+    animation: pulse 2s infinite;
+}

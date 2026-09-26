@@ -1,0 +1,249 @@
+﻿@implements IDisposable
+
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar;
+@inject ILocalStorageService LocalStorage
+@inject JavascriptProvider JsProvider
+
+@using Blazored.LocalStorage
+@using OmegaExplorer.Client.Components.Audio
+@using OmegaExplorer.Client.Components.Blocks.Utilities
+@using OmegaExplorer.Client.Managers
+@using OmegaExplorer.Client.Services
+@using OmegaExplorer.Client.Utilities
+@using OmegaExplorer.Client.Utilities.Dialog
+@using OmegaExplorer.Client.Utilities.Resources
+
+@inherits LayoutComponentBase
+
+<UserSettingsProvider></UserSettingsProvider>
+
+<DialogTemplates @ref="DialogTemplates"></DialogTemplates>
+<MudThemeProvider Theme="_theme" IsDarkMode="@_darkMode"/>
+<MudPopoverProvider/>
+<MudDialogProvider/>
+<MudSnackbarProvider/>
+<MudTypographyProvider/>
+
+<GlobalAudioPlayer @ref="GlobalAudioPlayer"></GlobalAudioPlayer>
+
+<PageTitle>OmegaExplorer</PageTitle>
+
+
+<MudLayout>
+    @if (IsShowAppGame())
+    {
+        <MudAppBar Elevation="1">
+            <MudIconButton Class="color-white" Icon="@ResourceIcon.MENU" Edge="Edge.Start" OnClick="@DrawerToggle"/>
+            <a href="/">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="0">
+                    <MudImage Src="@ResourceImage.LOGO" Height="40"></MudImage>
+                    
+                    <MudHidden Breakpoint="Breakpoint.Xs">
+                        <MudText Typo="Typo.h5" Class="ml-3 color-white"><b>Omega</b>Explorer</MudText>
+                    </MudHidden>
+
+                    <MudHidden Breakpoint="Breakpoint.SmAndUp">
+                        <MudText Typo="Typo.h5" Class="ml-3 color-white"><b>O</b>-E</MudText>
+                    </MudHidden>
+                </MudStack>
+            </a>
+            <MudSpacer/>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center">
+                <BlockAccount></BlockAccount>
+                <MudIconButton OnClick="OpenDialogSettings" Class="color-white" Icon="@ResourceIcon.NOTIFICATIONS"
+                               aria-label="Notifications"></MudIconButton>
+                <MudIconButton OnClick="OpenDialogSettings" Class="color-white" Icon="@ResourceIcon.SETTINGS"
+                               aria-label="Settings"></MudIconButton>
+            </MudStack>
+        </MudAppBar>
+
+        <HeaderResources @ref="HeaderResources"
+                         Class="mud-appbar mud-appbar-resource mud-appbar-fixed-top"></HeaderResources>
+
+        <MudDrawer Class="mud-elevation-6" @bind-Open="_drawerOpen">
+            <SidebarContainer @ref="_sidebar"></SidebarContainer>
+        </MudDrawer>
+    }
+    <MudMainContent Style="min-height: 100%; padding-top: 70px">
+        <MudContainer Style="padding-left: 0 !important; padding-right: 0 !important;" MaxWidth="MaxWidth.False">
+            <MudContainer Style="min-height: 83vh !important;" Class="pt-2" MaxWidth="MaxWidth.False">
+                @*
+                    <BlockAssistant></BlockAssistant>
+                    *@
+                @Body
+                <br/>
+                <br/>
+                <br/>
+            </MudContainer>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    public Action OnTechnologyResearchChanged { get; set; }
+    public Action OnResourcesChanged { get; set; }
+
+    public static MainLayout? Instance;
+    public static UserSettings? UserSettings = new();
+
+    public Action<ResponseUser?>? OnUserInspectionChanged { get; set; }
+    public ISnackbar ImplSnackbar { get; set; } = null!;
+    public DialogTemplates DialogTemplates;
+
+    public HeaderResources HeaderResources { get; set; }
+
+    public ResponseCycleState CycleState { get; set; }
+
+    public GlobalAudioPlayer GlobalAudioPlayer { get; set; }
+
+    private bool _drawerOpen = true;
+    private SidebarContainer? _sidebar = null!;
+
+    private readonly MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = Colors.DeepPurple.Darken2
+        },
+
+        PaletteDark = new PaletteDark
+        {
+            Primary = Colors.DeepPurple.Accent1
+        }
+    };
+
+    private bool _darkMode;
+
+    protected override void OnInitialized()
+    {
+        ImplSnackbar = Snackbar;
+        Instance = this;
+
+        UserSettingsManager.OnSettingsChanged += SettingsChanged;
+        ApiAuth.OnConnectionStateChanged += StateHasChanged;
+
+        CheckRedirection();
+    }
+
+    private void SettingsChanged(UserSettings settings)
+    {
+        UserSettings = settings;
+        _darkMode = settings.DarkMode;
+        StateHasChanged();
+    }
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private void Disconnect()
+    {
+        ApiAuth.Disconnect();
+        NavigationManager.NavigateTo("/login");
+    }
+
+    private void Connect()
+    {
+        NavigationManager.NavigateTo("/login");
+    }
+
+    private async void CheckRedirection()
+    {
+        string? reason = await LocalStorage.GetItemAsync<string>(GlobalConst.KEY_REDIRECT_REASON);
+        if (string.IsNullOrEmpty(reason))
+        {
+            return;
+        }
+
+        Snackbar.Add("Redirected : " + reason, Severity.Warning);
+        await LocalStorage.SetItemAsync(GlobalConst.KEY_REDIRECT_REASON, string.Empty);
+    }
+
+    public async void OpenDialogConnect()
+    {
+        DialogParameters parameters = new();
+        DialogOptions options = DialogOptionTemplates.SmallDialogOptions();
+        IDialogReference dialog = await DialogService.ShowAsync<DialogAccount>("Account", parameters, options);
+        DialogResult? result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Ask to update the technology search displayed
+    /// </summary>
+    public async Task CallUpdateTechnologySearch()
+    {
+        OnTechnologyResearchChanged.Invoke();
+    }
+
+    /// <summary>
+    /// Ask to update the resources displayed
+    /// </summary>
+    public async Task CallUpdateResources()
+    {
+        OnResourcesChanged.Invoke();
+    }
+
+    private async void OpenDialogSettings()
+    {
+        DialogParameters parameters = new();
+        DialogOptions options = DialogOptionTemplates.SmallDialogOptions();
+        IDialogReference dialog = await DialogService.ShowAsync<DialogSettings>("Settings", parameters, options);
+        DialogResult? result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        UserSettingsManager.OnSettingsChanged -= SettingsChanged;
+        ApiAuth.OnConnectionStateChanged -= StateHasChanged;
+        Snackbar?.Dispose();
+        ImplSnackbar.Dispose();
+    }
+
+    public async Task PushLogConsole(string message, string style)
+    {
+        await JsProvider.PushLog(message, style);
+    }
+
+    public void SetCurrentCycle(ResponseCycleState responseCycleState)
+    {
+        CycleState = responseCycleState;
+        StateHasChanged();
+    }
+
+    public void ForceStateHasChanged()
+    {
+        _sidebar?.ForceStateHasChanged();
+        StateHasChanged();
+    }
+
+    private bool IsShowAppGame()
+    {
+        bool res = true;
+        ResponseUser? user = ApiAuth.UserConnected;
+
+        if (user == null)
+        {
+            res = false;
+        }
+        else if (string.IsNullOrEmpty(user.Name) || user.Origin == null)
+        {
+            res = false;
+        }
+
+        return res;
+    }
+
+}

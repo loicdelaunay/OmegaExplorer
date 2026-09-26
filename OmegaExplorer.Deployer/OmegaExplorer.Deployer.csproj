@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <TargetFramework>net8.0-windows</TargetFramework>
+        <RootNamespace>OmegaExplore.Deployer</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+      <PackageReference Include="Serilog" Version="4.3.0" />
+      <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+      <PackageReference Include="SSH.NET" Version="2024.1.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Doc\Exemples\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="bin\Debug\net8.0-windows\config.json" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="config.json" />
+      <Content Include="config.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
+    <Import Project="..\OmegaExplorer.Shared\OmegaExplorer.Shared.projitems" Label="Shared" />
+
+</Project>

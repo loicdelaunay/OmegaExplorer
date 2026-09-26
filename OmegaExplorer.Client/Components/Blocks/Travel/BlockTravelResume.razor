@@ -1,0 +1,52 @@
+﻿@using OmegaExplorer.Client.Utilities.Extensions
+@if (Travel == null)
+{
+    <MudText>Travel not computed</MudText>
+}else {
+<MudPaper Class="pa-2" Outlined="true">
+    <MudStack Row="true">
+        <BlockTravel Title="You are here" ForceShow="true" LeftArrow="false"></BlockTravel>
+            
+        <BlockTravel Title="@GetExitingStarCluster" Distance="@Travel.Distance.DistanceExitStarCluster"
+                     Delay="@Travel.DelayExitStarCluster">
+        </BlockTravel>
+            
+        <BlockTravel Title="Distance to exit galaxy"
+                     Distance="@Travel.Distance.DistanceExitGalaxy"
+                     Delay="@Travel.DelayExitGalaxy">
+        </BlockTravel>
+            
+        <BlockTravel Title="Distance to exit universe"
+                     Distance="@Travel.Distance.DistanceToExitUniverse"
+                     Delay="@Travel.DelayToExitUniverse">
+        </BlockTravel>
+            
+        <BlockTravel Title="Distance to reach galaxy"
+                     Distance="@Travel.Distance.DistanceInUniverseToReachGalaxy"
+                     Delay="@Travel.DelayInUniverseToReachGalaxy">
+        </BlockTravel>
+            
+        <BlockTravel Title="Distance to reach targeted star cluster"
+                     Distance="@Travel.Distance.DistanceInGalaxyToReachStarCluster"
+                     Delay="@Travel.DelayInGalaxyToReachStarCluster">
+        </BlockTravel>
+            
+        <BlockTravel Title="@GetTargetName"
+                     Distance="@Travel.Distance.DistanceInStarClusterToReachPosition"
+                     Delay="@Travel.DelayInStarClusterToReachPosition">
+        </BlockTravel>
+            
+    </MudStack>
+    
+    <MudText Typo="Typo.h6">Total : @Travel.GetTotalCycles() cycles to execute this order</MudText>
+</MudPaper>
+}
+
+@code {
+    [Parameter]
+    public ResponseSpatialTravel? Travel { get; set; }
+
+    private string GetExitingStarCluster => $"Exiting current Star Cluster";
+    
+    private string GetTargetName => $"Reach {Travel.Target.Name}";
+}

@@ -1,0 +1,110 @@
+﻿@page "/spaceship/{spaceshipId:guid}"
+
+@using OmegaExplorer.Client.Utilities.Dialog
+@using OmegaExplorer.Client.Utilities.Extensions
+
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<Header Title="Spaceship" Subtitle="@_spaceship?.Name"></Header>
+<CheckConnection></CheckConnection>
+
+<MudButton OnClick="Update">REFRESH</MudButton>
+
+@if (_spaceship == null)
+{
+    <MudProgressCircular Indeterminate="true" Color="Color.Primary"/>
+}
+else
+{
+    <MudCard Class="ma-2 pa-2">
+        <MudStack Spacing="0">
+            @if (MainLayout.UserSettings.IsDev)
+            {
+                <MudText Color="Color.Warning" Typo="Typo.caption">@_spaceship.Id</MudText>
+            }
+
+            <MudStack Spacing="0">
+            <MudText Typo="Typo.caption">Name :</MudText>
+            <MudStack Row AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.h6">@_spaceship.Name</MudText> <MudButton OnClick="CallRenameDialog" Size="Size.Small">Rename</MudButton>
+            </MudStack>
+            </MudStack>
+
+            <MudText Class="mt-2" Typo="Typo.caption">Universe : @_spaceship.SpatialLocation.Universe?.Name</MudText>
+            <MudText Typo="Typo.caption">Galaxy : @_spaceship.SpatialLocation.Galaxy?.Name</MudText>
+            <MudText Typo="Typo.caption">Starcluster : @_spaceship.SpatialLocation.StarCluster?.Name</MudText>
+            <MudLink Href="@_spaceship.SpatialLocation.StarCluster.GetMapUrl()">Go
+                to @_spaceship.SpatialLocation.StarCluster.Name</MudLink>
+            <MudText Typo="Typo.caption">Position : @_spaceship.SpatialLocation.Position.ToStringFormated()</MudText>
+
+            <MudText Class="mt-2" Typo="Typo.caption">Owner : @_spaceship.Owner</MudText>
+            <MudText Typo="Typo.caption">Faction : @_spaceship.Faction</MudText>
+
+            @foreach (ResponseSpeciesAmount? speciesData in _spaceship.SpeciesData)
+            {
+                <BlockSpeciesData SpeciesData="speciesData"></BlockSpeciesData>
+            }
+        </MudStack>
+    </MudCard>
+    
+    <BlockSpaceship IsReadOnly="true" Blueprint="_blueprintSpaceship" Spaceship="_spaceship"></BlockSpaceship>
+}
+
+@code {
+
+    [Parameter]
+    public Guid SpaceshipId { get; set; }
+
+    private ResponseSpaceship? _spaceship;
+    private ResponseBlueprintSpaceship _blueprintSpaceship;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await ApiAuth.AwaitConnection();
+
+        await Update();
+    }
+
+    private async Task Update()
+    {
+        try
+        {
+            _spaceship = await ApiManager.Client.GetSpaceshipByIdAsync(SpaceshipId);
+            _blueprintSpaceship = _spaceship.Blueprint;
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add($"Not able to retrieve blueprint", Severity.Error);
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task CallRenameDialog()
+    {
+        if (_spaceship == null)
+        {
+            Snackbar.Add("Unable to rename the ship: data not available", Severity.Warning);
+            return;
+        }
+        
+        DialogParameters parameters = new DialogParameters
+        {
+            [nameof(DialogSpaceshipRename.Spaceship)] = _spaceship
+        };
+
+        DialogOptions options = DialogOptionTemplates.DefaultDialogOptions();
+        
+        
+        IDialogReference dialog = await DialogService.ShowAsync<DialogSpaceshipRename>("Rename the vessel", parameters, options);
+        DialogResult? result = await dialog.Result;
+        
+        if (!result.Canceled)
+        {
+            await Update();
+        }
+    }
+
+}

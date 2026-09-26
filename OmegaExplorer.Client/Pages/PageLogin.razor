@@ -1,0 +1,213 @@
+﻿@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject JavascriptProvider JavascriptProvider
+
+@page "/login"
+@using OmegaExplorer.Client.Pages.Start
+@using OmegaExplorer.Client.Services
+@using OmegaExplorer.Client.Utilities.Enums
+@using OmegaExplorer.Client.Utilities.Extensions
+@using OmegaExplorer.Client.Utilities.Resources
+
+@* <LottiePlayer Source="@ResourceAnimation.BACKGROUND_LOTTIE_SPACE" Speed="0.5"></LottiePlayer> *@
+<BackgroundAnimation></BackgroundAnimation>
+
+<MudBreakpointProvider OnBreakpointChanged="OnBreakPointChanged"></MudBreakpointProvider>
+
+<MudStack Style="height: 80vh;" AlignItems="AlignItems.Center" Justify="Justify.Center">
+    <MudStack Row="true" Spacing="0">
+        @* Form for login *@
+        <MudCard Square="true" Class="@GetMainCardClass()">
+            @if (_loading)
+            {
+                <MudStack Class="pa-5 ma-5" AlignItems="AlignItems.Center" Justify="Justify.Center">
+                    <MudProgressCircular Indeterminate="true" Color="Color.Primary"></MudProgressCircular>
+                </MudStack>
+            }
+            else
+            {
+                <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center">
+                    <MudCardMedia Image="@ResourceAnimation.PLANET_STANDARD_1" Style="width: 300px;" Height="200"/>
+                </MudStack>
+                <MudDivider Class="divider-title" Light="false" DividerType="DividerType.FullWidth"></MudDivider>
+                <MudCardContent Style="padding-top: 5px !important;">
+                    <MudStack Class="my-2" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="0">
+                        <MudText Typo="Typo.h5"><b>Omega</b>Explorer</MudText>
+                        <MudText Typo="Typo.subtitle2">4X turn based space game with human and generative gameplay
+                        </MudText>
+                    </MudStack>
+                    <MudForm Class="mt-2" @ref="_form" Model="@_requestAuthLogin">
+                        <MudStack>
+                            <MudTextField Immediate="true" @bind-Value="_requestAuthLogin.Email"
+                                          Variant="Variant.Outlined" Label="Email" Required="true"/>
+
+                            <MudTextField Immediate="true"
+                                          @bind-Value="_requestAuthLogin.Password" Variant="Variant.Outlined"
+                                          Label="Password" Required="true" InputType="InputType.Password"/>
+
+                            <MudButton ButtonType="ButtonType.Button" OnClick="CallLogin" Variant="Variant.Filled"
+                                       Color="Color.Primary">Login
+                            </MudButton>
+
+                            <MudGrid>
+                                <MudItem xs="12" md="12">
+                                    <MudButton OnClick="@LoginWithGoogle" Class="btn-google">
+                                        <MudStack Spacing="2" Row="true" Justify="Justify.Center"
+                                                  AlignItems="AlignItems.Center">
+                                            <MudImage Height="16" Width="16" Fluid="true"
+                                                      Src="@ResourceImage.LOGO_GOOGLE"></MudImage>
+                                            <MudText Align="Align.Center" Typo="Typo.body2"><b>Sign in with Google</b>
+                                            </MudText>
+                                        </MudStack>
+                                    </MudButton>
+                                </MudItem>
+                            </MudGrid>
+
+                            @if (!_loading)
+                            {
+                                <MudDivider></MudDivider>
+                                <MudButton Size="Size.Small" OnClick="RedirectToRegister" Variant="Variant.Text"
+                                           Color="Color.Primary">register
+                                </MudButton>
+                            }
+                        </MudStack>
+                    </MudForm>
+                </MudCardContent>
+            }
+        </MudCard>
+
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            @* Second form for features *@
+            <MudCard Square="true" Class="second-form-card rounded-tr-xl rounded-br-xl">
+                <MudStack Class="pa-2 ma-2 h-100" Justify="Justify.Center">
+                    <BlockFeature IconText="🚀" Title="Explore new galaxies" Description="procedurally generated"></BlockFeature>
+                    <BlockFeature IconText="🪐" Title="Colonize planets" Description="and build empires"></BlockFeature>
+                    <BlockFeature IconText="🤖" Title="AI-driven" Description="with evolving capabilities"></BlockFeature>
+                    <BlockFeature IconText="⚔️" Title="Turn-based strategy" Description="for deep tactical gameplay"></BlockFeature>
+                </MudStack>
+            </MudCard>
+        </MudHidden>
+    </MudStack>
+</MudStack>
+
+@code {
+    private MudForm _form;
+    private readonly RequestAuthLogin _requestAuthLogin = new();
+    
+    private bool _loading;
+    private bool _isMobile;
+    
+    private void RedirectToRegister()
+    {
+        NavigationManager.NavigateTo("/register");
+    }
+
+    private async Task CallLogin()
+    {
+        _loading = true;
+
+        if (ApiManager.Client == null)
+        {
+            _loading = false;
+            return;
+        }
+
+        try
+        {
+            EnumResultAuthConnect res = await ApiAuth.Connect(_requestAuthLogin.Email, _requestAuthLogin.Password);
+
+            switch (res)
+            {
+                case EnumResultAuthConnect.Success:
+                    Snackbar.Add($"Connected as {ApiAuth.UserConnected!.Email}", Severity.Success);
+                    await ValidAuthentication();
+                    break;
+                case EnumResultAuthConnect.NotFound:
+                    Snackbar.Add("User not found", Severity.Warning);
+                    break;
+                case EnumResultAuthConnect.Failed:
+                    Snackbar.Add("Error when login", Severity.Error);
+                    break;
+                case EnumResultAuthConnect.Unknown:
+                    Snackbar.Add("????", Severity.Error);
+                    break;
+                case EnumResultAuthConnect.Disabled:
+                    Snackbar.Add("Account is not enabled", Severity.Error);
+                    break;
+                case EnumResultAuthConnect.PasswordIncorrect:
+                    Snackbar.Add("Password incorrect", Severity.Error);
+                    break;
+                default:
+                    _loading = false;
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            Snackbar.Add($"Not able to connect : {e.Message}", Severity.Error);
+        }
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    // When authentication is valid
+    private async Task ValidAuthentication()
+    {
+        ResponseUser? userConnected = ApiAuth.UserConnected;
+
+        if (userConnected == null)
+        {
+            return;
+        }
+
+        Console.WriteLine($"User connected : {userConnected.Email} {userConnected.Origin} {userConnected.Origin == null}");
+
+        if (userConnected.Name == null)
+        {
+            NavigationManager.NavigateToPage<PageStartSelectName>();
+        }
+        else if (userConnected.Origin == null)
+        {
+            Console.WriteLine("[PageLogin] : navigate to origin");
+            NavigationManager.NavigateToPage<PageStartSelectOrigin>();
+        }
+        else
+        {
+            Console.WriteLine("[PageLogin] : navigate to home");
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
+    private async Task LoginWithGoogle()
+    {
+        await JavascriptProvider.LoginGoogle();
+        await ValidAuthentication();
+    }
+
+
+    private string GetMainCardClass()
+    {
+        var baseClass = "rounded-l-xl";
+
+        if (_isMobile)
+        {
+            baseClass += " rounded-r-xl";
+        }
+
+        return baseClass;
+    }
+
+    private void OnBreakPointChanged(Breakpoint newBreakpoint)
+    {
+        if (newBreakpoint <= Breakpoint.Sm)
+        {
+            _isMobile = true;
+        }
+        else
+        {
+            _isMobile = false;
+        }
+    }
+}

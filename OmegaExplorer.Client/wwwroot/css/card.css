@@ -1,0 +1,119 @@
+.card-container {
+    border-radius: 15px;
+    transition: box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.card-container-hoverable:hover {
+    box-shadow: 0 0 10px 5px var(--mud-palette-primary);
+    transform: scale(1.02);
+}
+
+.card{
+    min-height: 250px;
+    max-height: 600px;
+}
+
+.card-description{
+    max-height: 100px !important;
+    max-width: 250px !important;
+    overflow: auto;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.card-description-multiline {
+    max-height: 200px !important;
+    max-width: 250px !important;
+    overflow: auto;
+    text-overflow: ellipsis;
+}
+
+.card-common {
+    border: 1px solid var(--color-common) !important;
+    transition: border-color 0.3s ease-in-out !important;
+}
+
+.card-uncommon {
+    border: 1px solid var(--color-uncommon) !important;
+    transition: border-color 0.3s ease-in-out !important;
+}
+
+.card-rare {
+    border: 2px solid var(--color-rare) !important;
+    transition: border-color 0.3s ease-in-out !important;
+}
+
+.card-epic {
+    border: 2px solid var(--color-epic) !important;
+    transition: border-color 0.3s ease-in-out !important;
+}
+
+.card-legendary {
+    border: 3px solid var(--color-legendary) !important;
+    transition: border-color 0.3s ease-in-out! important;
+}
+
+.card-origin {
+    border: 4px double var(--color-origin) !important;
+    transition: border-color 0.3s ease-in-out !important;
+}
+
+.hover-group:hover .card-common,
+.hover-group:hover .card-uncommon,
+.hover-group:hover .card-rare,
+.hover-group:hover .card-epic,
+.hover-group:hover .card-legendary,
+.hover-group:hover .card-origin {
+    border-color: white;
+    transform: scale(1.05);
+}
+
+.card-message {
+    max-width: 80%;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.card-message-left {
+    margin-right: auto;
+    background-color: var(--color-background-message) !important;
+    color: var(--mud-palette-secondary-text);
+    border-bottom-left-radius: 5px;
+    position: relative; /* Add relative position for the container */
+}
+
+.card-message-left::before {
+    content: '';
+    position: absolute;
+    top: 10px; /* Position fixe par rapport au haut de la bulle */
+    left: -10px; /* Décalage vers la gauche */
+    width: 0;
+    height: 0;
+    border-right: 10px solid var(--color-background-message);
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    z-index: 10;
+}
+
+.card-message-right {
+    margin-left: auto;
+    background-color: var(--color-background-message-user) !important;
+    color: var(--mud-palette-primary-text);
+    border-bottom-right-radius: 5px;
+    position: relative; /* Ajout de la position relative pour le conteneur */
+}
+
+.card-message-right::after {
+    content: '';
+    position: absolute;
+    top: 10px; /* Position fixe par rapport au haut de la bulle */
+    right: -10px; /* Décalage vers la droite */
+    width: 0;
+    height: 0;
+    border-left: 10px solid var(--color-background-message-user);
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    z-index: 10;
+}
+

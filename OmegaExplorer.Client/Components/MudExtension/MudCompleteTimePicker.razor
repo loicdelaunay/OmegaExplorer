@@ -1,0 +1,72 @@
+﻿<MudStack Spacing="0">
+    @if (Value == null)
+    {
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary"></MudProgressCircular>
+    }
+    else
+    {
+        <MudStack Row="true">
+            <MudDatePicker @ref="_datePicker" Label="Date" Date="@_date" DateChanged="DateChanged">
+                <PickerActions>
+                    <MudButton Class="mr-auto align-self-start" OnClick="@(() => { _date = DateTime.Today; })">Today</MudButton>
+                    <MudButton OnClick="@(() => _datePicker.CloseAsync(submit: false))">Cancel</MudButton>
+                    <MudButton Color="Color.Primary" OnClick="@(() => _datePicker.CloseAsync())">Ok</MudButton>
+                </PickerActions>
+            </MudDatePicker>
+            <MudTimePicker Label="Time" Time="@_time" TimeChanged="TimeChanged"/>
+        </MudStack>
+    }
+</MudStack>
+
+@code {
+    private DateTime? _date = DateTime.Now;
+    private TimeSpan? _time = DateTime.Now.TimeOfDay;
+    private DateTime _value = DateTime.Now;
+    private MudDatePicker _datePicker;
+    [Parameter] public EventCallback<DateTime> ValueChanged { get; set; }
+
+    [Parameter]
+    public DateTime Value
+    {
+        get { return _value; }
+        set
+        {
+            if (_value != value)
+            {
+                _value = value;
+                _date = value.Date;
+                _time = value.TimeOfDay;
+                ValueChanged.InvokeAsync(arg: value);
+            }
+        }
+    }
+
+    private void DateChanged(DateTime? date)
+    {
+        _date = date;
+        if (date.HasValue && _time.HasValue)
+        {
+            UpdateValue(date: date.Value, time: _time.Value);
+        }
+    }
+
+    private void TimeChanged(TimeSpan? time)
+    {
+        _time = time;
+        if (_date.HasValue && time.HasValue)
+        {
+            UpdateValue(date: _date.Value, time: time.Value);
+        }
+    }
+
+    private void UpdateValue(DateTime date, TimeSpan time)
+    {
+        DateTime newValue = new DateTime(year: date.Year, month: date.Month, day: date.Day, hour: time.Hours, minute: time.Minutes, second: time.Seconds);
+        if (_value != newValue)
+        {
+            _value = newValue;
+            ValueChanged.InvokeAsync(arg: _value);
+        }
+    }
+
+}

@@ -1,0 +1,81 @@
+﻿@inject IDialogService DialogService
+@using OmegaExplorer.Client.Utilities.Dialog
+@implements IDisposable
+
+@if (!ApiAuth.IsConnecting)
+{
+    @if (ApiAuth.IsConnected)
+    {
+        <MudPaper @onclick="OpenDialogConnect" Class="pa-1 pl-2 pr-2 cursor-pointer hoverable hoverable-animation" Outlined="true">
+            <MudStack AlignItems="AlignItems.Center" Row="true">
+                @if (!string.IsNullOrEmpty(ApiAuth.UserConnected?.Name))
+                {
+                    <MudAvatar Size="Size.Small" Color="Color.Secondary">
+                        @ApiAuth.UserConnected.Name[0].ToString().ToUpper()
+                    </MudAvatar>
+                    
+                    <MudHidden Breakpoint="Breakpoint.SmAndDown">
+                        <div>
+                            <MudStack Justify="Justify.FlexStart" AlignItems="AlignItems.Start" Spacing="1" Row="true">
+                                <MudText>@ApiAuth.UserConnected.Name</MudText>
+
+                                @if (ApiAuth.UserConnected.AccessLevel == EnumUserAccessLevel.Admin)
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Primary">Admin</MudText>
+                                }
+                            </MudStack>
+                        </div>
+                    </MudHidden>
+                }
+                else
+                {
+                    <MudText>Please set name</MudText>
+                }
+            </MudStack>
+        </MudPaper>
+    }
+    else
+    {
+        <MudButton Variant="Variant.Outlined" Color="Color.Tertiary" @onclick="OpenDialogConnect">Connect</MudButton>
+    }
+}
+else
+{
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center">
+        <MudText>Reconnecting...</MudText>
+        <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary"></MudProgressCircular>
+    </MudStack>
+}
+
+@code{
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        ApiAuth.OnConnected += Refresh;
+        ApiAuth.OnDisconnected += () => Refresh(null);
+    }
+
+    public void Dispose()
+    {
+        ApiAuth.OnConnected -= Refresh;
+        ApiAuth.OnDisconnected -= () => Refresh(null);
+    }
+
+    public async void OpenDialogConnect()
+    {
+        DialogParameters parameters = new DialogParameters();
+        DialogOptions options = DialogOptionTemplates.SmallDialogOptions();
+        IDialogReference dialog = await DialogService.ShowAsync<DialogAccount>(title: string.Empty, parameters: parameters, options: options);
+        DialogResult? result = await dialog.Result;
+
+        StateHasChanged();
+    }
+
+    private void Refresh(ResponseUser? user)
+    {
+        StateHasChanged();
+    }
+
+}

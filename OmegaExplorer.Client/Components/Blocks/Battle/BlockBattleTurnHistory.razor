@@ -1,0 +1,71 @@
+﻿@using Serilog
+
+<MudStack Row="true" Class="overflow-auto w-100">
+    @if (_loading)
+    {
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary"/>
+    }
+    else
+    {
+        <MudStack Class="w-100">
+            @foreach (KeyValuePair<int, List<ResponseActionInBattle>> group in _actionsByTurn.OrderBy(action => action.Key))
+            {
+                <MudCard Outlined="true" Class="pa-2">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6">Turn @group.Key</MudText>
+                        @foreach (ResponseActionInBattle action in group.Value)
+                        {
+                            <BlockActionInBattle ResponseActionInBattle="action" ShowTurn="false"></BlockActionInBattle>
+                        }
+                    </MudStack>
+                </MudCard>
+            }
+        </MudStack>
+    }
+</MudStack>
+
+@code {
+
+    [Parameter]
+    public Guid BattleId { get; set; }
+
+    [Parameter]
+    public long Cycle { get; set; }
+
+    private List<ResponseActionInBattle> Actions { get; set; } = new();
+    private Dictionary<int, List<ResponseActionInBattle>> _actionsByTurn = new();
+
+    private bool _loading = true;
+
+    private string GetTitle()
+    {
+        return $"Turn {Cycle}";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Update();
+        await base.OnInitializedAsync();
+    }
+
+    private async Task Update()
+    {
+        try
+        {
+            Actions = await ApiManager.Client.GetAllActionsInBattleByCycleAsync(BattleId, Cycle);
+
+            _actionsByTurn = Actions
+                             .GroupBy(a => a.Turn)
+                             .ToDictionary(g => g.Key, g => g.ToList());
+        }
+        catch (Exception e)
+        {
+            Log.Logger.Information(e, "Error getting actions for turn {Turn}", Cycle);
+            MainLayout.Instance.ImplSnackbar.Add($"Not able to get actions for turn {Cycle}", Severity.Error);
+        }
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+}

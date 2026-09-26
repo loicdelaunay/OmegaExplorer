@@ -1,0 +1,9 @@
+﻿<MudStack Row="true">
+    <MudProgressCircular Indeterminate="true" Color="Color.Primary"></MudProgressCircular>
+    <MudText>@Text</MudText>
+</MudStack>
+
+@code {
+    [Parameter]
+    public string Text { get; set; } = "Loading...";
+}

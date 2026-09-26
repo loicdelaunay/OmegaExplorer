@@ -1,0 +1,27 @@
+﻿<MudPaper Outlined="true" Class="background pa-2">
+    <MudStack>
+        <MudText>@Module.Name</MudText>
+            <MudStack>
+                @foreach (ResponseDynamicItemSpaceshipSkill? skill in Module.Data.Skills)
+                {
+                    <BlockSkill OnClicked="OnSkillClicked" Skill="skill" CanSelectSkill="@CanSelectSkill"></BlockSkill>
+                }
+            </MudStack>
+    </MudStack>
+</MudPaper>
+
+
+@code {
+    [Parameter]
+    public ResponseSpaceshipModule Module { get; set; }
+    
+    [Parameter] public EventCallback<ResponseDynamicItemSpaceshipSkill> OnSkillClicked { get; set; }
+    
+    [Parameter]
+    public bool CanSelectSkill { get; set; }
+
+    public void Refresh()
+    {
+        StateHasChanged();
+    }
+}

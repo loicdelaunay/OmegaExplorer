@@ -1,0 +1,120 @@
+﻿@using OmegaExplorer.Client.Services
+@using OmegaExplorer.Client.Utilities.Resources
+@inject JavascriptProvider JavascriptProvider
+
+<MudCard Outlined="true">
+    <MudStack
+        @ref="GainContainerRef"
+        class="@GetClassContainer()"
+        AlignItems="AlignItems.Center"
+        Justify="Justify.Center">
+
+        <!-- Chest -->
+        <div class="gain-chest"></div>
+
+        <!-- Explosion -->
+        <div id="gain-explosion" class="gain-explosion"></div>
+
+        <!-- Gains -->
+        <div class="gain-result">
+            <MudCard>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="0">
+                    <MudImage Height="50" Src="@GetResourceImage()"></MudImage>
+                    <MudText Typo="Typo.h5"><b>@GetAmount()</b></MudText>
+                </MudStack>
+            </MudCard>
+        </div>
+
+    </MudStack>
+</MudCard>
+
+@code {
+
+    // Parameters
+    [Parameter]
+    public ResponseGameResource? GameResource { get; set; }
+
+    [Parameter]
+    public int? Index { get; set; }
+
+    [Parameter]
+    public int? Amount { get; set; }
+
+    // Reference to the container
+    private MudStack? GainContainerRef { get; set; }
+
+    // Flag to toggle the open state
+    private bool IsOpen { get; set; }
+
+    // Auto-open after one second
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Task.Delay(1000);
+            SetOpen(true);
+        }
+    }
+
+    private async Task SetOpen(bool value)
+    {
+        IsOpen = value;
+        if (value)
+        {
+            await JavascriptProvider.TriggerConfetti("gain-explosion");
+        }
+        StateHasChanged();
+    }
+
+    private string GetResourceImage()
+    {
+        string path = ResourceImage.UNKNOWN_RESOURCE;
+
+        if (GameResource != null)
+        {
+            path = ResourceImage.GetImageGameResource(index: GameResource.Index);
+        }
+        else if (Index != null)
+        {
+            path = ResourceImage.GetImageGameResource(index: (int) Index);
+        }
+
+        return path;
+    }
+
+    private int? GetAmount()
+    {
+        if (GameResource != null)
+        {
+            return GameResource.Amount;
+        }
+        else if (Amount != null)
+        {
+            return Amount.Value;
+        }
+
+        return 0;
+    }
+
+    private async Task OnReplay()
+    {
+        await SetOpen(false);
+        
+        await Task.Delay(1000);
+
+        await SetOpen(true);
+    }
+
+    private string GetClassContainer()
+    {
+        string res = "gain-container";
+
+        if (IsOpen)
+        {
+            res += " open";
+        }
+
+        return res;
+    }
+
+}

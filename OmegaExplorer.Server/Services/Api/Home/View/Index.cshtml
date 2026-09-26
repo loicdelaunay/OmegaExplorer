@@ -1,0 +1,217 @@
+﻿@{
+    ViewData["Title"] = "Home - Admin";
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
+<script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+
+<style>
+    :root {
+        /* Thème clair - violet */
+        --md-sys-color-primary: #6200ee;
+        --md-sys-color-on-primary: #ffffff;
+        --md-sys-color-primary-container: #e9ddff;
+        --md-sys-color-on-primary-container: #22005d;
+        --md-sys-color-surface: #f8f5fd;
+        --md-sys-color-on-surface: #1d1b20;
+        --md-sys-color-card-bg: #ffffff;
+        --md-sys-color-shadow: rgba(0, 0, 0, 0.1);
+        --md-sys-color-shadow-hover: rgba(0, 0, 0, 0.15);
+    }
+
+    [data-theme="dark"] {
+        /* Thème sombre - violet */
+        --md-sys-color-primary: #c9b3ff;
+        --md-sys-color-on-primary: #4200a6;
+        --md-sys-color-primary-container: #5c29cc;
+        --md-sys-color-on-primary-container: #e9ddff;
+        --md-sys-color-surface: #1d1b20;
+        --md-sys-color-on-surface: #e6e0e9;
+        --md-sys-color-card-bg: #2d2a33;
+        --md-sys-color-shadow: rgba(0, 0, 0, 0.3);
+        --md-sys-color-shadow-hover: rgba(0, 0, 0, 0.4);
+    }
+
+    body {
+        font-family: 'Roboto', sans-serif;
+        background-color: var(--md-sys-color-surface);
+        color: var(--md-sys-color-on-surface);
+        margin: 0;
+        padding: 24px;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 32px;
+    }
+
+    .branding {
+        display: flex;
+        align-items: center;
+    }
+
+    .logo {
+        height: 60px;
+        margin-right: 16px;
+    }
+
+    .theme-toggle {
+        background-color: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary);
+        border: none;
+        border-radius: 20px;
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.3s;
+    }
+
+    .theme-toggle:hover {
+        background-color: var(--md-sys-color-primary-container);
+        color: var(--md-sys-color-on-primary-container);
+    }
+
+    .theme-toggle .material-icons {
+        margin-right: 8px;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: 400;
+        margin-bottom: 0;
+        margin-top: 0;
+        color: var(--md-sys-color-primary);
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 400;
+        margin-top: 24px;
+        margin-bottom: 16px;
+    }
+
+    .services-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+        margin-top: 24px;
+    }
+
+    .service-card {
+        background-color: var(--md-sys-color-card-bg);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 2px 6px var(--md-sys-color-shadow);
+        transition: box-shadow 0.3s, transform 0.3s;
+    }
+
+    .service-card:hover {
+        box-shadow: 0 4px 12px var(--md-sys-color-shadow-hover);
+        transform: translateY(-2px);
+    }
+
+    .service-card-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .service-icon {
+        margin-right: 16px;
+        color: var(--md-sys-color-primary);
+    }
+
+    .service-title {
+        font-size: 1.25rem;
+        font-weight: 500;
+        margin: 0;
+    }
+
+    .service-link {
+        display: inline-block;
+        background-color: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary);
+        text-decoration: none;
+        padding: 10px 16px;
+        border-radius: 20px;
+        font-weight: 500;
+        box-shadow: 0 2px 4px var(--md-sys-color-shadow);
+        transition: background-color 0.3s, box-shadow 0.3s;
+    }
+
+    .service-link:hover {
+        background-color: var(--md-sys-color-primary-container);
+        color: var(--md-sys-color-on-primary-container);
+        box-shadow: 0 4px 8px var(--md-sys-color-shadow-hover);
+    }
+</style>
+
+<div class="header">
+    <div class="branding">
+        <img src="/Resources/Img/logo.png" alt="OmegaExplorer Logo" class="logo">
+        <h1 class="page-title">OmegaExplorer - Admin</h1>
+    </div>
+    <button id="themeToggle" class="theme-toggle">
+        <span class="material-icons">light_mode</span>
+        <span id="themeText">Dark mode</span>
+    </button>
+</div>
+
+<h2 class="section-title">Available Services</h2>
+
+<div class="services-grid">
+    <div class="service-card">
+        <div class="service-card-header">
+            <span class="material-icons service-icon">api</span>
+            <h3 class="service-title">Swagger</h3>
+        </div>
+        <p>Interactive API documentation.</p>
+        <a href="https://localhost:5001/swagger/index.html" target="_blank" class="service-link">Access</a>
+    </div>
+
+    <div class="service-card">
+        <div class="service-card-header">
+            <span class="material-icons service-icon">description</span>
+            <h3 class="service-title">ReDoc</h3>
+        </div>
+        <p>Interactive API documentation ReDoc version.</p>
+        <a href="https://localhost:5001/doc" target="_blank" class="service-link">Access</a>
+    </div>
+</div>
+
+<script>
+    // Light/dark theme management
+    const themeToggle = document.getElementById('themeToggle');
+    const themeText = document.getElementById('themeText');
+    const themeIcon = themeToggle.querySelector('.material-icons');
+
+    // Check if a theme is already registered
+    const currentTheme = localStorage.getItem('theme');
+    if (currentTheme === 'dark') {
+        document.body.setAttribute('data-theme', 'dark');
+        themeText.textContent = 'Light mode';
+        themeIcon.textContent = 'dark_mode';
+    }
+
+    themeToggle.addEventListener('click', () => {
+        if (document.body.getAttribute('data-theme') === 'dark') {
+            document.body.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+            themeText.textContent = 'Dark mode';
+            themeIcon.textContent = 'light_mode';
+        } else {
+            document.body.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            themeText.textContent = 'Light mode';
+            themeIcon.textContent = 'dark_mode';
+        }
+    });
+</script>
+

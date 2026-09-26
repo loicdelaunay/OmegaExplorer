@@ -1,0 +1,61 @@
+﻿@page "/scenarios"
+
+@using OmegaExplorer.Client.Models.Card.Definition
+@using OmegaExplorer.Shared.Filters
+@using OmegaExplorer.Client.Utilities.Dialog
+
+@inject IDialogService DialogService;
+
+<CheckConnection></CheckConnection>
+
+<Header Title="Scenarios" Subtitle="Every discussion is here"></Header>
+
+@if (MainLayout.UserSettings.IsDev)
+{
+    <MudStack Class="mb-2">
+        <MudButton Variant="Variant.Outlined" OnClick="OpenDialogAdminScenario" Color="Color.Error">Admin | force add event</MudButton>
+    </MudStack>
+}
+
+<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+
+    <MudTabPanel Text="Current">
+        <DynamicCardStack Filter="new DynamicDriverScenarioProgressFilter().FilterByFinished(false)" TCardDefinition="CardDefinitionScenarioProgress"></DynamicCardStack>
+    </MudTabPanel>
+
+    <MudTabPanel Text="Finished">
+        <DynamicCardStack Filter="new DynamicDriverScenarioProgressFilter().FilterByFinished(true)" TCardDefinition="CardDefinitionScenarioProgress"></DynamicCardStack>
+    </MudTabPanel>
+</MudTabs>
+
+@code {
+    private List<ResponseUserScenarioProgress> UserScenarios { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ApiAuth.AwaitConnection();
+        await Update();
+        await base.OnInitializedAsync();
+    }
+
+    private async Task Update()
+    {
+        UserScenarios = await ApiManager.Client.GetAllScenariosByConnectedUserAsync();
+        StateHasChanged();
+    }
+
+    private async Task OpenDialogAdminScenario()
+    {
+        DialogOptions options = DialogOptionTemplates.DefaultDialogOptions();
+        DialogParameters parameters = new();
+        IDialogReference dialog = await DialogService.ShowAsync<DialogAdminScenario>(string.Empty, parameters, options);
+
+        DialogResult? result = await dialog.Result;
+
+        if (result.Canceled)
+        {
+            return;
+        }
+    }
+
+}

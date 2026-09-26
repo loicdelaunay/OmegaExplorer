@@ -1,0 +1,49 @@
+﻿.tech-cube {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    transform-style: preserve-3d;
+    animation: spin 5s linear infinite;
+}
+
+.tech-face {
+    height: 50px !important;
+    width: 50px !important;
+    position: absolute;
+    outline: 2px solid var(--mud-palette-tertiary);
+    outline-offset: -2px;
+    background-color: var(--mud-palette-drawer-background);
+}
+
+.tech-front {
+    transform: translateZ(25px);
+}
+
+.tech-back {
+    transform: rotateY(180deg) translateZ(25px);
+}
+
+.tech-top {
+    transform: rotateX(90deg) translateZ(25px);
+}
+
+.tech-bottom {
+    transform: rotateX(-90deg) translateZ(25px);
+}
+
+.tech-left {
+    transform: rotateY(-90deg) translateZ(25px);
+}
+
+.tech-right {
+    transform: rotateY(90deg) translateZ(25px);
+}
+
+@keyframes spin {
+    from {
+        transform: rotate3d(0, 1, 0, 0deg);
+    }
+    to {
+        transform: rotate3d(0, 1, 0, 360deg);
+    }
+}

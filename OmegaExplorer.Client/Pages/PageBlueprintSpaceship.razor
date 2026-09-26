@@ -1,0 +1,253 @@
+﻿@page "/blueprint-spaceship"
+
+@using OmegaExplorer.Client.Models.Card.Definition
+@using OmegaExplorer.Client.Services
+
+@using OmegaExplorer.Client.Utilities.Resources
+@using Serilog
+@using OmegaExplorer.Server.Extensions
+
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject JavascriptProvider JavascriptProvider
+
+<CheckConnection></CheckConnection>
+<Header Title="Blueprint spaceship" Subtitle="Create or configure spaceship"></Header>
+
+<MudStack>
+<MudPaper>
+    <MudToolBar>
+        <MudStack Class="w-100" Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudStack Row="true" AlignItems="AlignItems.Center">
+                <MudButton StartIcon="@ResourceIcon.LOAD" Color="Color.Primary" Variant="Variant.Outlined" OnClick="@(PickBlueprintSpaceship)">Load</MudButton>
+                <MudButton StartIcon="@ResourceIcon.CREATE" Color="Color.Secondary" Variant="Variant.Outlined" OnClick="@CreateBlueprint">Create</MudButton>
+
+                @if (_blueprintSpaceship != null)
+                {
+                    <MudText>@GetNameCurrentBlueprint()</MudText>
+
+                    <MudIconButtonWithLabel OnClick="OnClickDelete" Label="Delete" Color="Color.Error"
+                                            Icon="@ResourceIcon.DELETE"></MudIconButtonWithLabel>
+                }
+            </MudStack>
+
+            @if (ApiAuth.IsAdmin)
+            {
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <MudTextField Margin="Margin.Dense" Variant="Variant.Outlined" T="string" @bind-Value="_exportName" Label="Export name"></MudTextField>
+
+                    <MudIconButtonWithLabel OnClick="OnClickExport" Label="Export" Color="Color.Error"
+                                            Icon="@ResourceIcon.EXPORT"></MudIconButtonWithLabel>
+
+                    @if (MainLayout.UserSettings.IsDev)
+                    {
+                        <MudButton Color="Color.Warning" Variant="Variant.Filled" OnClick="OnClickDebug">Debug
+                        </MudButton>
+                    }
+                </MudStack>
+            }
+        </MudStack>
+    </MudToolBar>
+</MudPaper>
+
+<MudDivider></MudDivider>
+
+@if (_blueprintSpaceship != null)
+{
+        <MudGrid>
+
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="_blueprintSpaceship.Name" Label="@(nameof(_blueprintSpaceship.Name))" Variant="Variant.Outlined"/>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudSelectFromEnum Label="@(nameof(_blueprintSpaceship.Size))" TItem="SpaceshipSize" ValueChanged="OnSpaceshipSizeChanged"></MudSelectFromEnum>
+            </MudItem>
+        </MudGrid>
+}
+
+<BlockSpaceship @ref="_spaceshipDesigner" Blueprint="_blueprintSpaceship"></BlockSpaceship>
+
+<MudBottomSticky Alignment="AlignItems.End">
+    <MudButton OnClick="OnClickSave" Color="Color.Primary" Variant="Variant.Filled">Save</MudButton>
+</MudBottomSticky>
+</MudStack>
+
+@code {
+
+    /// <summary>
+    /// List of all blueprint spaceships
+    /// </summary>
+    private List<ResponseBlueprintSpaceship> _blueprintSpaceships = new();
+
+    // Current selected blueprint spaceship
+    private ResponseBlueprintSpaceship? _blueprintSpaceship;
+
+    private string _exportName = string.Empty;
+    private BlockSpaceship? _spaceshipDesigner;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ApiAuth.AwaitConnection();
+        await RefreshBlueprintSpaceships();
+
+        await base.OnInitializedAsync();
+    }
+
+    private async Task RefreshBlueprintSpaceships()
+    {
+        try
+        {
+            List<ResponseBlueprintSpaceship>? res = await ApiManager.Client.GetSpaceshipBlueprintsByUserConnectedAsync();
+
+            _blueprintSpaceships = res;
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add("Not able to refresh blueprint : " + e.Message, Severity.Error);
+            Log.Logger.Error(e, "Not able to refresh blueprint");
+        }
+    }
+
+    private async Task CreateBlueprint()
+    {
+        _blueprintSpaceship = new ResponseBlueprintSpaceship
+        {
+            Id = Guid.NewGuid(),
+            Modules = new List<ResponseSpaceshipModule>(),
+            Name = "blueprint-" + (_blueprintSpaceships.Count() + 1)
+        };
+
+        StateHasChanged();
+    }
+
+
+    private async Task PickBlueprintSpaceship()
+    {
+        ResponseBlueprintSpaceship? result = await MainLayout.Instance.DialogTemplates.OpenPicker<CardDefinitionBlueprintSpaceship, ResponseBlueprintSpaceship>("Pick blueprint spaceship");
+
+        if (result == null)
+        {
+            Snackbar.Add("No blueprint selected", Severity.Info);
+            return;
+        }
+
+        _blueprintSpaceship = result;
+        StateHasChanged();
+    }
+
+    private string GetNameCurrentBlueprint()
+    {
+        if (_blueprintSpaceship == null)
+        {
+            return "No blueprint selected...";
+        }
+
+        return _blueprintSpaceship.Name;
+    }
+
+    private void OnClickDebug()
+    {
+        MainLayout.Instance.DialogTemplates.OpenDialogDebug(_blueprintSpaceship);
+    }
+
+    private async void OnClickSave()
+    {
+        try
+        {
+            Log.Information($"[{nameof(PageBlueprintSpaceship)}] : saving blueprint spaceship: {_blueprintSpaceship} with {_blueprintSpaceship.Modules.Count} modules");
+
+            //Check if blueprint spaceship is valid
+            string error = _spaceshipDesigner.IsValid();
+            if(!string.IsNullOrEmpty(error))
+            {
+                Snackbar.Add("Blueprint not valid: " + error, Severity.Error);
+                return;
+            }
+
+            RequestCreateBlueprintSpaceship req = new()
+            {
+                Id = _blueprintSpaceship.Id,
+                Name = _blueprintSpaceship.Name,
+                Size = _blueprintSpaceship.Size,
+                Modules = new List<BlueprintSpaceshipModule>()
+            };
+
+            //Parse modules to blueprint modules
+            foreach (ResponseSpaceshipModule? spaceshipModule in _blueprintSpaceship.Modules)
+            {
+                BlueprintSpaceshipModule module = new()
+                {
+                    X = spaceshipModule.X,
+                    Y = spaceshipModule.Y,
+                    Index = spaceshipModule.Index
+                };
+
+                req.Modules.Add(module);
+            }
+
+            ResponseBlueprintSpaceship? newBlueprint = await ApiManager.Client.CreateOrUpdateSpaceshipBlueprintAsync(req);
+
+            _blueprintSpaceship = newBlueprint;
+            Snackbar.Add("Blueprint saved", Severity.Success);
+        }
+        catch (Exception e)
+        {
+            Log.Logger.Error(e, "Not able to save blueprint");
+            Snackbar.Add("Not able to save blueprint: " + e.Message, Severity.Error);
+        }
+    }
+
+    private async void OnClickDelete()
+    {
+        try
+        {
+            if (!await MainLayout.Instance.DialogTemplates.OpenDialogConfirm(_blueprintSpaceship.Name, type: DialogTemplate.EnumType.Error))
+            {
+                return;
+            }
+
+            await ApiManager.Client.DeleteSpaceshipBlueprintAsync(_blueprintSpaceship.Id);
+            Snackbar.Add("Blueprint deleted", Severity.Success);
+
+            RefreshBlueprintSpaceships();
+            _blueprintSpaceship = null;
+            StateHasChanged();
+        }
+        catch (Exception e)
+        {
+            Log.Logger.Error(e, "Not able to delete blueprint");
+            Snackbar.Add("Error: " + e.Message, Severity.Error);
+        }
+    }
+
+    private void OnClickExport()
+    {
+        IDynamicItemSpaceshipBlueprint spaceshipModel = new()
+        {
+            Modules = new List<BlueprintModelModule>(),
+            Name = _exportName,
+            Size = _blueprintSpaceship.Size
+        };
+
+        foreach (ResponseSpaceshipModule? blueprintSpaceshipModule in _blueprintSpaceship.Modules)
+        {
+            spaceshipModel.Modules.Add(new BlueprintModelModule()
+            {
+                X = blueprintSpaceshipModule.X,
+                Y = blueprintSpaceshipModule.Y,
+                Index = blueprintSpaceshipModule.Index
+            });
+        }
+
+        string content = spaceshipModel.JsonSerialize();
+        JavascriptProvider.SaveAsFile(fileName: spaceshipModel.Name.ToLower() + ".blueprint.json", content: content);
+    }
+
+    private void OnSpaceshipSizeChanged(SpaceshipSize size)
+    {
+        _spaceshipDesigner.SetSize(size);
+    }
+
+}

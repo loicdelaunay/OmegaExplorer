@@ -1,0 +1,177 @@
+﻿@inject NavigationManager NavigationManager
+@inject ISnackbar SnackBar
+@inject CycleHubProvider CycleHubProvider
+
+@using OmegaExplorer.Client.Pages
+@using OmegaExplorer.Client.Providers.Hubs
+@using OmegaExplorer.Client.Utilities.Extensions
+@using Serilog
+
+@using OmegaExplorer.Client.Utilities.Resources
+
+@implements IDisposable
+
+<MudCard @onclick="@NavigateTechnologies" Outlined Class="@GetContainerClass()">
+    @if (_data == null)
+    {
+        <MudText Typo="Typo.caption"><b>Not technology in research</b></MudText>
+        <MudText Typo="Typo.subtitle2">Click here to select new one</MudText>
+    }
+    else
+    {
+        <MudStack Spacing="1">
+            <BlockTechnologyCube Image="@ResourceImage.GetImageTechnology(_data.TechnologyIndex)"></BlockTechnologyCube>
+            
+            @if (_data.TechnologyData == null)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Warning">Error : technology data is null ?</MudText>  
+            }
+            else
+            {
+                <MudText Typo="Typo.caption">
+                    <b>@_data.TechnologyData.Name @_data.Progress/@_data.TechnologyData.Complexity End in @GetForecastProgress() turns</b>
+                </MudText>
+            }
+
+            <MudProgressLinear Size="Size.Large" Rounded Class="color-origin" Buffer Value="@GetProgress()"
+                               BufferValue="@GetProgressNextTurn()" Max="100"></MudProgressLinear>
+        </MudStack>
+    }
+</MudCard>
+
+@code {
+    private ResponseTechnologyKnowledge? _data;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        MainLayout.Instance.OnTechnologyResearchChanged += _technologyResearchChangedHandler;
+        CycleHubProvider.OnCycleStarted += _cycleChangedHandler;
+        
+        await ApiAuth.AwaitConnection();
+        await Refresh();
+        await base.OnInitializedAsync();
+    }
+
+    private async void _cycleChangedHandler()
+    {
+        await Refresh();
+
+    }
+
+    private async void _technologyResearchChangedHandler()
+    {
+        await Refresh();
+    }
+
+    private async Task Refresh()
+    {
+        try
+        {
+            _data = await ApiManager.Client.GetCurrentTechnologyProgressAsync();
+            StateHasChanged();
+        }
+        catch (SwaggerException swaggerException)
+        {
+            //Returning a null ok is correct IDK why it is throwing an exception... not able to fix it in nswag configuration
+            if(swaggerException.StatusCode == 204)
+            {
+                _data = null;
+                StateHasChanged();
+            }
+            else
+            {
+                Log.Logger.Error(swaggerException, "Error getting current technology");
+                SnackBar.Add($"Not able to retrieve current tech {swaggerException.Message}", Severity.Error);
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Logger.Error(e, "Error getting current technology");
+            SnackBar.Add($"Not able to retrieve current tech {e.Message}", Severity.Error);
+        }
+    }
+
+    private void NavigateTechnologies()
+    {
+        NavigationManager.NavigateToPage<PageTechnologies>();
+    }
+
+    private string GetContainerClass()
+    {
+        string res = "pa-2 ma-2 hoverable";
+
+        if (_data is { TechnologyData: not null })
+        {
+            res += $" halo-effect halo-{_data.TechnologyData.Rarity.ToString().ToLower()}";
+        }
+
+        return res;
+    }
+
+    public void Dispose()
+    {
+        if (_technologyResearchChangedHandler != null)
+        {
+            MainLayout.Instance.OnTechnologyResearchChanged -= _technologyResearchChangedHandler;
+        }
+        
+        if (_cycleChangedHandler != null)
+        {
+            CycleHubProvider.OnCycleStarted -= _cycleChangedHandler;
+        }
+    }
+
+    private int GetProgress()
+    {
+        try
+        {
+            if (_data.TechnologyData == null)
+            {
+                Log.Logger.Error("Technology data is null, cannot compute progress");
+                return 0;
+            }
+            
+            if (_data is { TechnologyData: not null })
+            {
+                return _data.Progress * 100 / _data.TechnologyData.Complexity;
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("not able to compute progress: " + e.Message);
+            return 0;
+        }
+        
+        return 0;
+    }
+
+    private int GetProgressNextTurn()
+    {
+        //TODO compute real forecast
+        try
+        {
+            if (_data != null)
+            {
+                return _data.Progress * 100 / _data.TechnologyData.Complexity + 10;
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("not able to compute progress next turn: " + e.Message);
+            return 0;
+        }
+
+        return 0;
+    }
+    
+    private int GetForecastProgress()
+    {
+        //TODO compute real forecast
+        int progress = 10;
+        
+        int turns = ((_data.TechnologyData.Complexity - _data.Progress) / progress) +1 ;
+        
+        return turns;
+    }
+}

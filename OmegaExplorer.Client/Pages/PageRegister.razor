@@ -1,0 +1,215 @@
+﻿@page "/register"
+
+@using OmegaExplorer.Client.Utilities.Resources
+@using System.Net.Mail
+@using OmegaExplorer.Client.Utilities.Extensions
+@using System.Text.RegularExpressions
+
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar;
+
+<MudStack Style="height: 100%;" AlignItems="AlignItems.Center" Justify="Justify.Center">
+    <MudCard Outlined="true" Class="main-form-card">
+        <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center">
+            <MudCardMedia Image="@ResourceAnimation.PLANET_STANDARD_1" Style="width: 300px;" Height="200"/>
+        </MudStack>
+        <MudDivider Light="true" DividerType="DividerType.FullWidth"></MudDivider>
+        <MudCardContent Style="padding-top: 0 !important;">
+            <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center">
+                <MudText Typo="Typo.h6">OmegaExplorer</MudText>
+            </MudStack>
+            @if (!string.IsNullOrEmpty(error))
+            {
+                <MudText Color="Color.Error">@error</MudText>
+            }
+            @if (_loading)
+            {
+                <MudProgressCircular></MudProgressCircular>
+            }
+            else
+            {
+                <MudForm @ref="_form" Model="@_requestAuthRegister">
+                    <MudStack>
+                        @switch (step)
+                        {
+                            case RegisterStep.Email:
+                                <MudTextField @ref="_fieldEmail" Immediate="true" @bind-Value="_requestAuthRegister.Email"
+                                              Variant="Variant.Outlined" Label="Email" Required="true" InputType="InputType.Email" InputMode="InputMode.email"/>
+                                break;
+
+                            case RegisterStep.Password:
+                                <MudTextField Immediate="true" @ref="_fieldPassword" @bind-Value="_requestAuthRegister.Password" Variant="Variant.Outlined"
+                                              Validation="@(new Func<string, IEnumerable<string>>(PasswordStrength))"
+                                              Label="Password" Required="true" InputType="InputType.Password"/>
+
+                                <MudTextField Immediate="true" @ref="_fieldPasswordConfirm" T="string" Variant="Variant.Outlined"
+                                              Validation="@(new Func<string, string>(PasswordMatch))"
+                                              Label="Password confirmation" Required="true" InputType="InputType.Password"/>
+                                break;
+                            case RegisterStep.Send:
+                                <MudStack Spacing="0">
+                                    <MudText>Email : @_requestAuthRegister.Email</MudText>
+                                </MudStack>
+                                break;
+                            default:
+                                <MudText>Registering please wait ...</MudText>
+                                break;
+                        }
+
+                        <MudButton Disabled="NextIsDisabled()" ButtonType="ButtonType.Button" OnClick="NextRegisterStep" Variant="Variant.Filled" Color="Color.Primary">@GetRegisterLabel()</MudButton>
+                    </MudStack>
+                </MudForm>
+            }
+        </MudCardContent>
+    </MudCard>
+    <MudButton Size="Size.Small" OnClick="RedirectToLogin" Variant="Variant.Text" Color="Color.Primary">login</MudButton>
+</MudStack>
+
+@code {
+    private RequestAuthRegister _requestAuthRegister = new();
+
+    private enum RegisterStep
+    {
+        Email = 0,
+        Password = 1,
+        Send = 2
+    }
+
+    private RegisterStep step;
+    MudForm? _form;
+    MudTextField<string>? _fieldEmail;
+    MudTextField<string>? _fieldPassword;
+    MudTextField<string>? _fieldPasswordConfirm;
+
+    private bool _loading;
+    private string error;
+
+    private void RedirectToLogin()
+    {
+        NavigationManager.NavigateToPage<PageLogin>();
+    }
+
+    private async void NextRegisterStep()
+    {
+        step++;
+        switch (step)
+        {
+            case RegisterStep.Send:
+                try
+                {
+                    await CallRegister();
+
+                    //Done redirect to log in
+                    RedirectToLogin();
+                }
+                catch (Exception e)
+                {
+                    step--;
+                    Snackbar.Add("Not able to create account", Severity.Error);
+                    Console.WriteLine(e);
+                }
+
+                break;
+        }
+    }
+
+    private async Task CallRegister()
+    {
+        try
+        {
+            _loading = true;
+            Console.WriteLine("Calling register");
+            if (ApiManager.Client == null)
+            {
+                throw new Exception("Api is null");
+            }
+
+            ResponseUser? res = await ApiManager.Client.RegisterAsync(_requestAuthRegister);
+
+            Snackbar.Add($"Account {res.Email} created !", Severity.Success);
+            _requestAuthRegister = new RequestAuthRegister();
+            await Task.Delay(200);
+            RedirectToLogin();
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add($"Not able to create account : {e.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private string GetRegisterLabel()
+    {
+        return step == RegisterStep.Send ? "register" : "next";
+    }
+
+    private bool NextIsDisabled()
+    {
+        bool invalid = false;
+
+        if (step == RegisterStep.Email)
+        {
+            if (string.IsNullOrEmpty(_requestAuthRegister.Email))
+            {
+                error = "Email is not valid";
+                invalid = true;
+            }
+            else
+            {
+                invalid = !EmailIsValid(_fieldEmail.Value);
+                if (invalid)
+                {
+                    error = "Email is not valid";
+                }
+            }
+        }
+
+        if (!invalid)
+        {
+            error = string.Empty;
+        }
+
+        return invalid;
+    }
+
+    private bool EmailIsValid(string email)
+    {
+        try
+        {
+            MailAddress addr = new MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private IEnumerable<string> PasswordStrength(string pw)
+    {
+        if (string.IsNullOrWhiteSpace(pw))
+        {
+            yield return "Password is required!";
+            yield break;
+        }
+
+        if (pw.Length < 8)
+            yield return "Password must be at least of length 8";
+        if (!Regex.IsMatch(pw, @"[A-Z]"))
+            yield return "Password must contain at least one capital letter";
+        if (!Regex.IsMatch(pw, @"[a-z]"))
+            yield return "Password must contain at least one lowercase letter";
+        if (!Regex.IsMatch(pw, @"[0-9]"))
+            yield return "Password must contain at least one digit";
+    }
+
+    private string PasswordMatch(string arg)
+    {
+        if (_fieldPassword.Value != arg)
+            return "Passwords don't match";
+        return null;
+    }
+}

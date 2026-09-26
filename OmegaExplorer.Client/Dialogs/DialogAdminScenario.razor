@@ -1,0 +1,109 @@
+﻿@using OmegaExplorer.Client.Models.Card.Definition
+@using Serilog
+@using OmegaExplorer.Client.Utilities.Resources
+
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <Header Dialog="true" OnClose="@(() => MudDialog.Close())" Size="Size.Small" Title="Admin scenario"
+                Subtitle="Manage scenario as admin" Icon="@ResourceIcon.ADMIN">
+        </Header>
+        <MudStack>
+            <MudCard Class="pa-2" Outlined="true">
+                <MudStack>
+                    <MudText>Pick a scenario :</MudText>
+                    <MudButton Variant="Variant.Outlined" OnClick="PickAScenario">Pick a scenario :</MudButton>
+
+                    @if (_scenario != null)
+                    {
+                        <MudText>Scenario picked is @_scenario.Name at index @_scenario.Index</MudText>
+                    }
+                </MudStack>
+            </MudCard>
+
+            <MudCard Class="pa-2" Outlined="true">
+                <MudStack>
+                    <MudText>Pick an user :</MudText>
+                    <MudButton Variant="Variant.Outlined" OnClick="PickAnUser">Add scenario to user</MudButton>
+
+                    @if (_user != null)
+                    {
+                        <MudText>User picked is @_user.Name</MudText>
+                    }
+                </MudStack>
+            </MudCard>
+
+            @if (_scenario != null && _user != null)
+            {
+                <MudButton Variant="Variant.Filled" OnClick="AddScenarioToUser">Add new scenario to user</MudButton>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code{
+
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; }
+    
+    private IDynamicItemScenario? _scenario;
+    
+    private ResponseUser? _user;
+    
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task PickAScenario()
+    {
+        IDynamicItemScenario? definition = await MainLayout.Instance.DialogTemplates.OpenPicker<CardDefinitionIDynamicItemScenario, IDynamicItemScenario>();
+
+        if (definition == null)
+        {
+            return;
+        }
+        
+        _scenario = definition;
+        StateHasChanged();
+    }
+
+    private async Task PickAnUser()
+    {
+        ResponseUser? user = await MainLayout.Instance.DialogTemplates.OpenPicker<CardDefinitionUser, ResponseUser>();
+        
+        if (user == null)
+        {
+            return;
+        }
+        
+        _user = user;
+        StateHasChanged();
+    }
+
+    private async Task AddScenarioToUser()
+    {
+        try
+        {
+            await ApiManager.Client.AddScenarioToUserAsAdminAsync(_scenario.Index, _user.Id);
+            Snackbar.Add($"Scenario {_scenario.Name} added to user {_user.Name}", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Error while adding scenario to user");
+            Snackbar.Add("Error while adding scenario to user", Severity.Error);
+        }
+    }
+
+}

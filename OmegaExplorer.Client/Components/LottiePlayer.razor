@@ -1,0 +1,95 @@
+﻿<lottie-player src="@Source" class="@GetClass()" @attributes="AdditionalAttributes"
+               background="transparent" mode="@GetMode()"
+               style="@Style" @key="@Source">
+</lottie-player>
+
+
+@** @key="@Source" => force reload when source changed **@
+
+@code {
+    [Parameter]
+    public string Source { get; set; }
+
+    [Parameter] public bool AutoPlay { get; set; } = true;
+
+    [Parameter] public bool Loop { get; set; } = true;
+
+    [Parameter] public double Speed { get; set; } = 1;
+    
+    [Parameter] public string Height { get; set; } = "auto";
+    
+    [Parameter] public string Width { get; set; } = "auto";
+
+    [Parameter] public LottieMode Mode { get; set; } = LottieMode.Normal;
+
+    [Parameter] public string Class { get; set; } = "background-lottie";
+
+    public enum LottieMode
+    {
+        Normal,
+        Bounce
+    }
+    
+    public string Style { get => ComposeStyle(); }
+
+    private IDictionary<string, object> AdditionalAttributes { get; set; } = new Dictionary<string, object>();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        BuildAdditionalAttributes();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        BuildAdditionalAttributes();
+    }
+
+    private void BuildAdditionalAttributes()
+    {
+        AdditionalAttributes.Clear();
+
+        if (AutoPlay)
+        {
+            AdditionalAttributes.Add("autoplay", true);
+        }
+
+        if (Loop)
+        {
+            AdditionalAttributes.Add("loop", true);
+        }
+
+        AdditionalAttributes.Add("speed", Speed.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        
+        StateHasChanged();
+    }
+    private string ComposeStyle()
+    {
+        return $"width: {Width}; height: {Height};";
+    }
+
+    private string GetMode()
+    {
+        switch (Mode)
+        {
+            case LottieMode.Normal:
+                return "normal";
+            case LottieMode.Bounce:
+                return "bounce";
+            default:
+                return "normal";
+        }
+    }
+    
+    private string GetClass()
+    {
+        string res = "unselectable";
+        
+        if (!string.IsNullOrEmpty(Class))
+        {
+            res += $" {Class}";
+        }
+
+        return res;
+    }
+
+}

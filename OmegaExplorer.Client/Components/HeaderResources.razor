@@ -1,0 +1,62 @@
+﻿@using OmegaExplorer.Client.Providers.Hubs
+@using OmegaExplorer.Client.Utilities.Resources
+
+@inject CycleHubProvider CycleHubProvider
+
+@implements IDisposable
+
+<MudPaper Style="@Style" Class="@Class" Outlined="true">
+    <MudStack Class="ml-1" Style="height: 100%" Spacing="1" AlignItems="AlignItems.Center" Justify="Justify.FlexStart" Row="true">
+        @foreach (ResponseGameResource resource in _resources)
+        {
+            <ChipResource GameResource="resource"></ChipResource>
+        }
+        
+        <ChipIconValue Value="@_limitSystemsColonized.Current" MaxValue="_limitSystemsColonized.Max" Icon="@ResourceImage.LIMIT_SYSTEM"></ChipIconValue>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public string Style { get; set; }
+
+    [Parameter] public string Class { get; set; }
+
+    private List<ResponseGameResource> _resources = new();
+    
+    private Limit _limitSystemsColonized = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _resources = await ApiManager.Client.GetResourcesByUserConnectedAsync();
+        _limitSystemsColonized = await ApiManager.Client.GetLimitSystemsColonizedAsync();
+
+        CycleHubProvider.OnCycleStarted += _OnCycleChanged;
+        MainLayout.Instance.OnResourcesChanged += _OnResourceChanged;
+        
+        await base.OnInitializedAsync();
+    }
+
+    private async void _OnResourceChanged()
+    {
+        await Refresh();
+    }
+
+    public async void _OnCycleChanged()
+    {
+        await Refresh();
+    }
+
+    public async Task Refresh()
+    {
+        _resources = await ApiManager.Client.GetResourcesByUserConnectedAsync();
+        _limitSystemsColonized = await ApiManager.Client.GetLimitSystemsColonizedAsync();
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        CycleHubProvider.OnCycleStarted -= _OnCycleChanged;
+        MainLayout.Instance.OnResourcesChanged -= _OnResourceChanged;
+    }
+
+}

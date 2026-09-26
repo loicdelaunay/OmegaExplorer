@@ -1,0 +1,578 @@
+﻿@inject IDialogService DialogService
+@implements IDisposable
+@using Microsoft.AspNetCore.Components.Rendering
+@using OmegaExplorer.Client.Managers
+@using OmegaExplorer.Client.Models
+@using OmegaExplorer.Client.Models.Card
+@using OmegaExplorer.Client.Models.Card.Dynamic
+@using OmegaExplorer.Client.Utilities.Dialog
+@using OmegaExplorer.Client.Utilities.Enums
+@using Serilog
+@using OmegaExplorer.Shared.Filters
+@using OmegaExplorer.Client.Utilities.Resources
+
+@typeparam TCardDefinition where TCardDefinition : CardDefinition
+
+@if (_exception != null)
+{
+    <MudStack>
+        <MudStack Row="true">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@(() => Get(null, true))">Reload
+            </MudButton>
+        </MudStack>
+        <MudText Typo="Typo.body1">Dynamic card stack system internal error :</MudText>
+        <MudPaper Class="ma-2 pa-2 background-color-dark overflow-auto">
+            <MudStack>
+                <MudText Typo="Typo.body2" Color="Color.Error" Style="white-space: pre">@_exception</MudText>
+
+                <MudButton OnClick="CallOpenDebug">Open debug</MudButton>
+            </MudStack>
+        </MudPaper>
+    </MudStack>
+}
+else
+{
+    @if (_loading || _definitions == null)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary"></MudProgressLinear>
+    }
+    else
+    {
+        @if (!DisableToolbar)
+        {
+            <MudPaper Elevation="25" Outlined="true" Class="toolbar pa-2 mb-2">
+                <MudToolBar Dense="true">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" Class="w-100">
+                        <MudStack Spacing="3" Row="true" AlignItems="AlignItems.Center">
+                            <MudIconButtonWithLabel Variant="Variant.Outlined" Color="Color.Primary"
+                                                    Icon="@ResourceIcon.REFRESH" Label="Refresh" Description="Refresh"
+                                                    OnClick="@(() => Get())"></MudIconButtonWithLabel>
+
+                            @if (IsCheckable())
+                            {
+                                <MudDivider Class="ml-1 mr-2" Style="width: 10px; height: 20px"
+                                            Vertical="true"></MudDivider>
+                                <MudIconButtonWithLabel Icon="@ResourceIcon.CHECK_ALL" Label="Select all"
+                                                        OnClick="@(() => SelectAll(value: true))"></MudIconButtonWithLabel>
+                                <MudIconButtonWithLabel Icon="@ResourceIcon.UNCHECK_ALL" Label="Unselect all"
+                                                        OnClick="@(() => SelectAll(value: false))"></MudIconButtonWithLabel>
+                            }
+
+                            @if (!IsChildContentEmpty())
+                            {
+                                <MudDivider Class="ml-1 mr-2" Style="width: 10px; height: 20px"
+                                            Vertical="true"></MudDivider>
+                                @ChildContent
+                            }
+
+                            @if (MainLayout.UserSettings.IsDev)
+                            {
+                                <MudDivider Class="ml-1 mr-2" Style="width: 10px; height: 20px"
+                                            Vertical="true"></MudDivider>
+                                <MudStack Spacing="0">
+                                    <MudText Color="Color.Warning" Typo="Typo.caption">
+                                        Found @_definitions.Count() elements
+                                        | @CountSelected selected
+                                    </MudText>
+                                    <MudText Color="Color.Warning" Typo="Typo.caption">
+                                        Page @_pagination.SelectedPage/@_pagination.TotalPages |
+                                        load @_pagination.OptionPageSize elements
+                                    </MudText>
+                                </MudStack>
+                            }
+                        </MudStack>
+                        <MudStack Row="true" AlignItems="AlignItems.Center">
+                            @if (_performance)
+                            {
+                                <MudText Typo="Typo.caption">Grid mode</MudText>
+                            }
+                            <MudToggleIconButton @bind-Toggled="@_performance"
+                                                 Icon="@Icons.Material.Outlined.GridOff" Color="@Color.Default"
+                                                 Title="Grid mode"
+                                                 ToggledIcon="@Icons.Material.Filled.GridOn"
+                                                 ToggledColor="@Color.Success"
+                                                 ToggledTitle="On"/>
+                        </MudStack>
+                    </MudStack>
+                </MudToolBar>
+                @if (!DisableSearch)
+                {
+                    <MudPaper Class="background-color-dark ml-2 mr-2 pa-2">
+                        <DynamicSearch @ref="_dynamicSearch" @bind-Filters="Filter" OnFastSearch="FastGet"
+                                       OnSearch="@(() => Get())"
+                                       Sample="@(Cards?.FirstOrDefault()?.Definition?.Value)">
+                        </DynamicSearch>
+                    </MudPaper>
+                }
+            </MudPaper>
+        }
+
+        @if (!_definitions.Any())
+        {
+            <MudPaper Elevation="25" Outlined="true" Class="pa-2 mt-2">
+                <MudText Typo="Typo.body1" Color="Color.Primary">Nothing to show</MudText>
+            </MudPaper>
+
+            @if (!string.IsNullOrEmpty(RedirectIfEmpty))
+            {
+                <MudCard Class="py-2 my-2" Outlined="true">
+                    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center">
+                        <MudLink Class="btn-link" Color="Color.Primary" Href="@RedirectIfEmpty">Create a new one</MudLink>
+                    </MudStack>
+                </MudCard>
+            }
+        }
+        else
+        {
+            <Stack Horizontal
+                   Wrap
+                   HorizontalAlignment="HorizontalAlignement"
+                   VerticalAlignment="VerticalAlignement"
+                   HorizontalGap="10"
+                   VerticalGap="20">
+                @foreach (CardDefinition cardDefinition in _definitions)
+                {
+                    <Card
+                        Mode="Mode"
+                        @ref="Card"
+                        Definition="cardDefinition"
+                        OnUpdate="CallOnCallUpdate"
+                        OnDeleted="CardDeleted"
+                        OnClicked="CardClicked"
+                        Hidden="_performance">
+                    </Card>
+                }
+            </Stack>
+
+            @if (_pagination.TotalPages > 1)
+            {
+                <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center" Style="z-index: 1000"
+                          Class="flex-grow-1 align-self-center pagination-block mt-5">
+                    <MudPaper Class="pl-3 pr-3 pt-2 pb-2" Outlined="true">
+                        <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center">
+                            <MudPagination Color="Color.Primary" Count="@_pagination.TotalPages"
+                                           Selected="@(_pagination.SelectedPage)"
+                                           SelectedChanged="@(page => Get(page: page))" ShowFirstButton="true"
+                                           ShowLastButton="true"/>
+                            <MudIconButton OnClick="@OpenDialogPagination" Icon="@ResourceIcon.SETTINGS"
+                                           Size="Size.Small"></MudIconButton>
+                        </MudStack>
+                    </MudPaper>
+                </MudStack>
+            }
+        }
+    }
+}
+
+@code {
+
+    /// <summary>
+    /// Force card selection mode
+    /// </summary>
+    [Parameter]
+    public EnumCardMode Mode { get; set; } = EnumCardMode.Standard;
+
+    [Parameter]
+    public StackAlignment VerticalAlignement { get; set; } = StackAlignment.Start;
+
+    [Parameter]
+    public StackAlignment HorizontalAlignement { get; set; } = StackAlignment.Start;
+
+    [Parameter]
+    public EventCallback<IEnumerable<CardDefinition>> OnValueChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<Card> OnCardClicked { get; set; }
+
+    [Parameter]
+    public EventCallback<TCardDefinition> OnDefinitionClicked { get; set; }
+
+    [Parameter]
+    public EventCallback<Card> OnCardDeleted { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public bool DisableSearch { get; set; }
+
+    [Parameter]
+    public bool DisableToolbar { get; set; }
+
+    [Parameter]
+    public IDynamicCardStackDriver? Driver { get; set; }
+
+    [Parameter]
+    public bool RefreshOnInitialization { get; set; } = true;
+
+    [Parameter]
+    public string? RedirectIfEmpty { get; set; } = null;
+
+    public readonly List<Card> Cards = new();
+
+    public int CountSelected;
+
+    [Parameter]
+    public DynamicDriverFilter Filter { get; set; } = new();
+
+    // Card definitions shown
+    private List<CardDefinition>? _definitions;
+
+    private Card Card
+    {
+        get { return null; }
+        set
+        {
+            Cards.Add(value);
+            StateHasChanged();
+        }
+    }
+
+    private IDynamicCardStackDriver _driver;
+
+    private MudDataGrid<Card>? _dataGrid;
+
+    private Exception? _exception;
+
+    private bool _loading;
+
+    // Browsing pagination system
+    private Pagination _pagination = new();
+
+    private DynamicSearch _dynamicSearch;
+
+    private bool _performance;
+
+    /// <summary>
+    ///     Initializer
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        Log.Logger.Information($"[{nameof(DynamicCardStack<TCardDefinition>)}] : loading dynamic card stack of type {typeof(TCardDefinition)} | refresh on init : {RefreshOnInitialization}");
+        Cards.Clear();
+
+        if (ApiAuth.IsConnected && RefreshOnInitialization)
+        {
+            Get(null, true);
+        }
+
+        ApiAuth.OnConnected += OnConnected;
+    }
+
+    public void Dispose()
+    {
+        ApiAuth.OnConnected -= OnConnected;
+    }
+
+    private void OnConnected(ResponseUser user)
+    {
+        if (RefreshOnInitialization)
+        {
+            Get(null, true);
+        }
+    }
+
+    public async Task Get(int? page = null, bool firstRefresh = false)
+    {
+        Log.Logger.Information($"[{nameof(DynamicCardStack<TCardDefinition>)}] : get with {Filter}...");
+        Cards.Clear();
+        if (page == null)
+        {
+            page = _pagination.SelectedPage;
+        }
+
+        _loading = true;
+
+        try
+        {
+            Type type = typeof(TCardDefinition);
+
+            // Get driver
+            if (Driver != null)
+            {
+                _driver = Driver;
+            }
+            else
+            {
+                _driver = DynamicCardStackDriverManager.GetByType(type: type);
+            }
+
+            if (!DynamicCardStackDriverManager.IsInitialized)
+            {
+                throw new Exception(message: "DynamicCardStackDriverManager is not initialized !");
+            }
+
+            if (_driver == null)
+            {
+                throw new Exception(message: $"Not able to found a correct driver for {type}, please check if correctly registered into DynamicDriverManager");
+            }
+
+            ResultPagined? res = await _driver.Get(pagination: _pagination, Filter);
+
+            if (res == null)
+            {
+                _exception = new Exception(message: "Response is null");
+                return;
+            }
+
+            _pagination = res.Pagination;
+            List<CardDefinition> definitions = res.Data.ToList();
+
+            // Initialize cards
+            foreach (CardDefinition cardDefinition in definitions)
+            {
+                bool needRefresh = await cardDefinition.InitializeAsync();
+                if (needRefresh)
+                {
+                    StateHasChanged();
+                }
+            }
+
+            _definitions = definitions;
+
+
+            //TODO implement dynamic list
+            /*if (_definitions.Count() > 200)
+            {
+                _performance = true;
+            }*/
+
+            await OnValueChanged.InvokeAsync(arg: _definitions);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(value: e);
+            _exception = e;
+        }
+
+        _pagination.SelectedPage = (int) page;
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task OpenDialogPagination()
+    {
+        DialogParameters parameters = new()
+        {
+            [parameterName: nameof(DialogPagination.CurrentPageSize)] = _pagination.OptionPageSize
+        };
+
+        DialogOptions options = DialogOptionTemplates.SmallDialogOptions();
+
+        IDialogReference dialog = await DialogService.ShowAsync<DialogPagination>(title: "Pagination settings", parameters: parameters, options: options);
+        DialogResult? result = await dialog.Result;
+
+        if (result.Canceled)
+        {
+            return;
+        }
+
+        _pagination.OptionPageSize = (int) result.Data;
+        Get();
+    }
+
+    private void SelectAll(bool value)
+    {
+        foreach (Card card in Cards)
+        {
+            card.SetSelected(value);
+        }
+
+        if (value)
+        {
+            CountSelected = Cards.Count;
+
+            if (_dataGrid != null)
+            {
+                _dataGrid.SelectedItems = Cards.ToHashSet();
+            }
+        }
+        else
+        {
+            CountSelected = 0;
+            if (_dataGrid != null)
+            {
+                _dataGrid.SelectedItems.Clear();
+            }
+        }
+
+        StateHasChanged();
+    }
+
+    private List<CardAction> GetActions()
+    {
+        List<CardAction>? res = new();
+
+        Card? card = Cards.FirstOrDefault();
+        if (card == null)
+        {
+            return res;
+        }
+
+        res = card.Definition?.Actions.Where(predicate: action => action.Multiple).ToList();
+        return res;
+    }
+
+    public List<TCardDefinition> GetValues()
+    {
+        List<TCardDefinition> res = _definitions.Cast<TCardDefinition>().ToList();
+        return res;
+    }
+
+    public List<T> GetValuesSelected<T>() where T : CardDefinition
+    {
+        List<T?> res = Cards.Where(predicate: card => card.IsSelected).Select(selector: card => (T) card.Definition).ToList();
+        return res;
+    }
+
+    public List<T> GetDefinitionsValues<T>()
+    {
+        List<TCardDefinition> definitions = GetValues();
+        List<T> res = definitions.Cast<T>().ToList();
+
+        return res;
+    }
+
+    /// <summary>
+    /// When a card is deleted
+    /// </summary>
+    /// <param name="card"></param>
+    private async Task CallOnCardDeleted(Card card)
+    {
+        _ = Get();
+        await OnCardDeleted.InvokeAsync(arg: card);
+    }
+
+    /// <summary>
+    /// When a card is clicked
+    /// </summary>
+    /// <param name="card"></param>
+    private async Task CallOnCardClicked(Card card)
+    {
+        await OnCardClicked.InvokeAsync(arg: card);
+    }
+
+    /// <summary>
+    /// When a card call update stack
+    /// </summary>
+    /// <param name="card"></param>
+    private void CallOnCallUpdate(Card card)
+    {
+        Get();
+    }
+
+    //TODO : start searching locally when the user type in the search bar awaiting the server response
+    private void FastGet()
+    {
+    }
+
+    private string RowClassFunc(Card card, int arg2)
+    {
+        return card.IsSelected ? "selected-row" : "";
+    }
+
+    private void OnGridSelected(HashSet<Card> cards)
+    {
+        foreach (Card cardChecked in Cards.Where(card => card.IsSelected))
+        {
+            cardChecked.SetSelected(false);
+        }
+
+        foreach (Card card in cards)
+        {
+            card.SetSelected(true);
+        }
+
+        CountSelected = cards.Count;
+    }
+
+    private void OnCardChecked(bool value)
+    {
+        if (!value)
+        {
+            CountSelected--;
+        }
+        else
+        {
+            CountSelected++;
+        }
+
+        //CountSelected = Cards.Where(card => card.IsChecked).Count();
+    }
+
+    // Start to 2 because the first frame is the type of the component
+    private bool IsChildContentEmpty()
+    {
+        try
+        {
+            RenderTreeBuilder builder = new();
+
+            ChildContent(builder);
+            return builder.GetFrames().Count < 2;
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
+    private bool IsCheckable()
+    {
+        Card? sample = Cards.FirstOrDefault();
+
+        if (sample == null)
+        {
+            return false;
+        }
+
+        if (sample.Definition == null)
+        {
+            return false;
+        }
+
+        return sample.Definition.Settings.IsCheckable;
+    }
+
+    private async Task CardClicked(Card card)
+    {
+        TCardDefinition? definition = card.Definition as TCardDefinition;
+
+        if (definition != null)
+        {
+            await DefinitionClicked(definition);
+        }
+
+        CallOnCardClicked(card);
+    }
+
+    private async Task DefinitionClicked(TCardDefinition definition)
+    {
+        await OnDefinitionClicked.InvokeAsync(definition);
+    }
+
+    private void CardDeleted(Card card)
+    {
+        Get();
+        CallOnCardDeleted(card);
+    }
+
+    private void CallOpenDebug()
+    {
+        MainLayout.Instance.DialogTemplates.OpenDialogDebug(this);
+    }
+
+    public void Add(TCardDefinition definition)
+    {
+        CardDefinition definitionCast = definition as CardDefinition;
+
+        if (definition == null)
+        {
+            Log.Logger.Error("Not able to add a null definition");
+            return;
+        }
+
+        _definitions.Add(definitionCast);
+        StateHasChanged();
+    }
+
+}

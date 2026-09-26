@@ -1,0 +1,18 @@
+﻿<MudCard Outlined="true" Class="pa-2">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudIcon Icon="@Icon" Color="Color"></MudIcon>
+        @ChildContent
+    </MudStack>
+</MudCard>
+
+
+@code {
+    [Parameter]
+    public Color Color { get; set; } = Color.Default;
+    
+    [Parameter]
+    public string Icon { get; set; }
+    
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+}

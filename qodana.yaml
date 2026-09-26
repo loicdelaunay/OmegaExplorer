@@ -1,0 +1,106 @@
+#-------------------------------------------------------------------------------#
+#               Qodana analysis is configured by qodana.yaml file               #
+#             https://www.jetbrains.com/help/qodana/qodana-yaml.html            #
+#-------------------------------------------------------------------------------#
+version: "1.0"
+#Specify IDE code to run analysis without container (Applied in CI/CD pipeline)
+ide: QDNET
+#Specify inspection profile for code analysis
+profile:
+  name: qodana.starter
+include:
+  - name: ConvertIfStatementToReturnStatement
+  - name: ConvertIfStatementToConditionalTernaryExpression
+  - name: ConvertIfStatementToNullCoalescingExpression
+  - name: RouteTemplates.ActionRoutePrefixCanBeExtractedToControllerRoute
+  - name: ArrangeThisQualifier
+  - name: ArrangeStaticMemberQualifier
+  - name: UnusedAutoPropertyAccessor.Global
+  - name: AutoPropertyCanBeMadeGetOnly.Global
+  - name: AutoPropertyCanBeMadeGetOnly.Local
+  - name: AsyncVoidMethod
+  - name: CanReplaceCastWithVariableType
+  - name: ClassWithVirtualMembersNeverInherited.Global
+  - name: CollectionNeverQueried.Local
+  - name: CollectionNeverUpdated.Global
+  - name: UsePatternMatching
+  - name: ConvertIfStatementToSwitchStatement
+  - name: ConvertToLocalFunction
+  - name: ConvertToUsingDeclaration
+  - name: ConvertToConstant.Global
+  - name: ConvertToConstant.Local
+  - name: ConvertToAutoProperty
+  - name: ConvertToAutoPropertyWhenPossible
+  - name: ConvertToAutoPropertyWithPrivateSetter
+  - name: DuplicatedSwitchSectionBodies
+  - name: CompareOfFloatsByEqualityOperator
+  - name: ConditionIsAlwaysTrueOrFalse
+  - name: FieldCanBeMadeReadOnly.Global
+  - name: FieldCanBeMadeReadOnly.Local
+  - name: UnassignedGetOnlyAutoProperty
+  - name: BadControlBracesIndent
+  - name: InlineOutVariableDeclaration
+  - name: InlineTemporaryVariable
+  - name: JoinDeclarationAndInitializer
+  - name: UseVerbatimString
+  - name: MemberCanBePrivate.Global
+  - name: MemberCanBeProtected.Global
+  - name: MergeIntoNegatedPattern
+  - name: MergeIntoPattern
+  - name: MergeIntoLogicalPattern
+  - name: UnusedMethodReturnValue.Global
+  - name: InternalOrPrivateMemberNotDocumented
+  - name: CheckNamespace
+  - name: NotAccessedField.Global
+  - name: PossibleLossOfFraction
+  - name: PreferConcreteValueOverDefault
+  - name: PropertyCanBeMadeInitOnly.Global
+  - name: MoveLocalFunctionAfterJumpStatement
+  - name: EntityFramework.NPlusOne.IncompleteDataQuery
+  - name: RedundantIfElseBlock
+  - name: RedundantCast
+  - name: RedundantJumpStatement
+  - name: RedundantEmptyObjectCreationArgumentList
+  - name: RedundantEmptyObjectOrCollectionInitializer
+  - name: RedundantLambdaSignatureParentheses
+  - name: RedundantStringInterpolation
+  - name: RedundantTypeDeclarationBody
+  - name: RedundantVerbatimPrefix
+  - name: RedundantVerbatimStringPrefix
+  - name: ArrangeRedundantParentheses
+  - name: ReplaceSubstringWithRangeIndexer
+  - name: ConvertSwitchStatementToSwitchExpression
+  - name: UseNullPropagation
+  - name: SYSLIB1045
+  - name: CA2208
+  - name: CA2211
+  - name: CA1854
+  - name: CA1850
+  - name: ASP0015
+  - name: CA1829
+  - name: CA2012
+  - name: SwitchStatementMissingSomeEnumCasesNoDefault
+  - name: SwitchStatementHandlesSomeKnownEnumValuesWithDefault
+  - name: TailRecursiveCall
+  - name: EntityFramework.ModelValidation.CircularDependency
+  - name: UnusedType.Global
+  - name: UnusedMemberInSuper.Global
+  - name: UnusedMember.Global
+  - name: UnassignedField.Global
+  - name: UnusedVariable
+  - name: UnusedParameter.Global
+  - name: UnusedParameter.Local
+  - name: UseSymbolAlias
+  - name: UseCollectionCountProperty
+  - name: UseObjectOrCollectionInitializer
+  - name: SuggestVarOrType_BuiltInTypes
+  - name: ArgumentsStyleOther
+  - name: ArgumentsStyleAnonymousFunction
+  - name: ArgumentsStyleLiteral
+  - name: ArgumentsStyleNamedExpression
+  - name: ArgumentsStyleStringLiteral
+  - name: ArrangeNamespaceBody
+  - name: ArrangeTrailingCommaInMultilineLists
+  - name: ArrangeObjectCreationWhenTypeEvident
+  - name: ArrangeObjectCreationWhenTypeNotEvident
+  - name: UseRawString

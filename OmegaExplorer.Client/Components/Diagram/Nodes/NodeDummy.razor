@@ -1,0 +1,14 @@
+﻿@using OmegaExplorer.Client.Components.Diagram.Nodes.Models
+
+<MudPaper Outlined="true" Width="100px" Height="100px">
+    <MudStack Class="h-100" Spacing="0" AlignItems="AlignItems.Center" Justify="Justify.Center" StretchItems="StretchItems.All">
+        <MudText Typo="Typo.caption">Game : @Node.GamePosition.X:@Node.GamePosition.Y</MudText>
+        <MudText Typo="Typo.caption">Diagram : @Node.Position.X:@Node.Position.Y</MudText>
+    </MudStack>
+</MudPaper>
+
+@code {
+
+    [Parameter]
+    public NodeModelDummy Node { get; set; } = null!;
+}

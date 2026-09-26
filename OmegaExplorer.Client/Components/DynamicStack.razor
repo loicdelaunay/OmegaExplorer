@@ -1,0 +1,16 @@
+﻿<Stack
+    Horizontal
+    Wrap
+    HorizontalAlignment="StackAlignment.Start"
+    VerticalAlignment="StackAlignment.Start"
+    HorizontalGap="20"
+    VerticalGap="20">
+    @ChildContent
+</Stack>
+
+@code {
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+}

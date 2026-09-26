@@ -1,0 +1,61 @@
+﻿@inject ISnackbar Snackbar
+
+<MudCard Class="card-message card-message-right" Elevation="0">
+    <MudText Typo="Typo.body1" Color="Color.Dark">@Dialog.Message</MudText>
+
+    @if (!IsReadOnly && Dialog.ScenarioChoices != null && Dialog.ScenarioChoices.Any())
+    {
+        <MudStack Row="true" Spacing="2" Class="mt-2">
+                @foreach (ResponseDynamicItemScenarioChoice? choice in Dialog.ScenarioChoices)
+                {
+                    <MudCard Elevation="1" Class="pa-2">
+                        <BlockScenarioChoice OnChoiceSelected="OnChoiceSelected" Choice="choice"></BlockScenarioChoice>
+                    </MudCard>
+                }
+        </MudStack>
+    }
+
+    @if (Dialog.Recompenses.Any())
+    {
+        @foreach(Recompense? recompense in Dialog.Recompenses)
+        {
+            <BlockScenarioRecompense Recompense="recompense"></BlockScenarioRecompense>
+        }
+    }
+</MudCard>
+
+@code {
+
+    [Parameter]
+    public ResponseScenarioDialog Dialog { get; set; }
+
+    [Parameter]
+    public ResponseUserScenarioProgress ScenarioProgress { get; set; }
+
+    [Parameter]
+    public bool IsUserMessage { get; set; }
+
+    [Parameter]
+    public EventCallback<ResponseUserScenarioProgress> OnScenarioProgressUpdate { get; set; }
+
+    [Parameter]
+    public bool IsReadOnly { get; set; }
+
+    private async void OnChoiceSelected(ResponseDynamicItemScenarioChoice choice)
+    {
+        try
+        {
+            ResponseUserScenarioProgress? res = await ApiManager.Client.SetChoiceAsync(ScenarioProgress.Id, Dialog.Index, choice.Index);
+            Snackbar.Add("Choice made", Severity.Success);
+
+            await OnScenarioProgressUpdate.InvokeAsync(res);
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add("Error making choice", Severity.Error);
+            Console.WriteLine(e);
+        }
+
+    }
+
+}

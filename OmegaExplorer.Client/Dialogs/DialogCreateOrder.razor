@@ -1,0 +1,235 @@
+﻿@using OmegaExplorer.Client.Models.Card.Definition
+@using OmegaExplorer.Shared.Filters
+@using OmegaExplorer.Client.Utilities.Extensions
+@using OmegaExplorer.Client.Utilities.Resources
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <Header Dialog="true" OnClose="@(() => MudDialog.Close())" Size="Size.Small" Title="@MudDialog.Title"
+                Subtitle="@GetSubtitle()" Icon="@ResourceIcon.SPACESHIP">
+        </Header>
+        <MudStack>
+            <BlockTravelResume Travel="_travel"></BlockTravelResume>
+
+            <MudStack Row="true">
+                <MudButton Color="Color.Primary" OnClick="CallPickActor" Variant="Variant.Filled">Pick an actor</MudButton>
+                <MudButton Color="Color.Primary" OnClick="CallPickTarget" Variant="Variant.Filled">Pick a target</MudButton>
+            </MudStack>
+
+            <MudGrid>
+                <MudItem xs="5">
+                    @if (Actor != null)
+                    {
+                        if (Actor is ResponseSpaceship spaceship)
+                        {
+                            <Card Definition="new CardDefinitionSpaceship(spaceship)"></Card>
+                        }
+                    }
+                </MudItem>
+                <MudItem xs="2">
+                    <MudStack>
+                        <MudIcon Icon="@ResourceIcon.ARROW_RIGHT"></MudIcon>
+                    </MudStack>
+                </MudItem>
+                <MudItem xs="5">
+                    @if (Target != null)
+                    {
+                        if (Target is ResponseStarSystem starSystem)
+                        {
+                            <Card Definition="new CardDefinitionStarSystem(starSystem)"></Card>
+                        }
+
+                        else if (Target is ResponseSpaceship spaceship)
+                        {
+                            <Card Definition="new CardDefinitionSpaceship(spaceship)"></Card>
+                        }
+                        else
+                        {
+                            <MudText>Target type unknown ? : @Target.GetType().ToString() </MudText>
+                        }
+                    }
+                </MudItem>
+            </MudGrid>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Confirm">@OrderType</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code{
+
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public ResponseSpatialObject? Actor { get; set; }
+
+    [Parameter] public ResponseSpatialObject? Target { get; set; }
+
+    [Parameter]
+    public OrderType OrderType { get; set; } = OrderType.Move;
+
+    private ResponseSpatialTravel? _travel;
+
+    private void Close()
+    {
+        MudDialog.Cancel();
+    }
+
+    /// <summary>
+    /// Confirm the order
+    /// </summary>
+    private async Task Confirm()
+    {
+        try
+        {
+            Console.WriteLine($"Confirming order {OrderType} from {Actor} to {Target}...");
+
+            switch (OrderType)
+            {
+                case OrderType.Attack:
+                    await ApiManager.Client.OrderAttackSpaceshipAsync(Actor.Id, Target.Id);
+                    break;
+                case OrderType.Defend:
+                    throw new NotImplementedException();
+                case OrderType.Move:
+                    await ApiManager.Client.OrderMoveSpaceshipAsync(Actor.Id, Target.SpatialLocation.Position.X, Target.SpatialLocation.Position.Y, Target.SpatialLocation.StarClusterId, Target.SpatialLocation.GalaxyId, Target.SpatialLocation.UniverseId);
+                    break;
+                case OrderType.Wait:
+                    throw new NotImplementedException();
+                case OrderType.Colonize:
+                    await ApiManager.Client.OrderColonizeSpaceshipAsync(Actor.Id, Target.Id);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            Snackbar.Add($"Spaceship order {OrderType} assigned", Severity.Success);
+            MudDialog.Close();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            Snackbar.Add($"Error while moving spaceship : {e.Message}", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Select a target
+    /// </summary>
+    private async Task CallPickTarget()
+    {
+        switch (OrderType)
+        {
+            case OrderType.Attack:
+                await CallPickSpaceship();
+                break;
+            case OrderType.Defend:
+                break;
+            case OrderType.Move:
+                break;
+            case OrderType.Wait:
+                break;
+            case OrderType.Colonize:
+                await CallPickStarSystem();
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+
+    private async Task CallPickStarSystem()
+    {
+        DynamicDriverStarSystemFilter starSystemFilter = new();
+        starSystemFilter.SetFilterToSearchAllStarSystems(true);
+
+        ResponseStarSystem? starSystem = await MainLayout.Instance.DialogTemplates
+                                                         .OpenPicker<CardDefinitionStarSystem, ResponseStarSystem>(filter: starSystemFilter);
+
+        if (starSystem == null)
+        {
+            return;
+        }
+
+        Target = starSystem;
+        await CallComputeDurationOrder();
+        StateHasChanged();
+    }
+
+    private async Task CallPickSpaceship()
+    {
+        DynamicDriverSpaceshipFilter spaceshipFilter = new();
+        spaceshipFilter.AddFilterBySpaceshipOwner(DynamicDriverSpaceshipFilter.SpaceshipOwner.Enemy);
+
+        ResponseSpaceship? spaceship = await MainLayout.Instance.DialogTemplates
+                                                       .OpenPicker<CardDefinitionSpaceship, ResponseSpaceship>(filter: spaceshipFilter);
+
+        if (spaceship == null)
+        {
+            return;
+        }
+
+        Target = spaceship;
+        await CallComputeDurationOrder();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Select an actor
+    /// </summary>
+    private async Task CallPickActor()
+    {
+        DynamicDriverSpaceshipFilter filter = new();
+        filter.AddFilterBySpaceshipOwner(DynamicDriverSpaceshipFilter.SpaceshipOwner.ConnectedPlayer);
+
+        ResponseSpaceship? actor = await MainLayout.Instance.DialogTemplates.OpenPicker<CardDefinitionSpaceship, ResponseSpaceship>(filter: filter);
+
+        if (actor == null)
+        {
+            return;
+        }
+
+        Actor = actor;
+        await CallComputeDurationOrder();
+        StateHasChanged();
+    }
+
+    //Compute the duration of the order
+    //TODO compute other actions
+    private async Task CallComputeDurationOrder()
+    {
+        if(Actor == null || Target == null)
+        {
+            return;
+        }
+
+        try
+        {
+            RequestTravelInfo requestTravelInfo = new()
+            {
+                ActorId = Actor.Id,
+                Target = Target.SpatialLocation
+            };
+
+            _travel = await ApiManager.Client.GetTravelInfoAsync(requestTravelInfo);
+            StateHasChanged();
+            Snackbar.Add("Travel computed", Severity.Success);
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add($"Error while computing travel : {e.Message}", Severity.Error);
+        }
+
+        Snackbar.Add("Computing travel...", Severity.Info);
+    }
+
+    private string GetSubtitle()
+    {
+        string subtitle = $"order to {OrderType} for {Actor?.Name}";
+
+        return subtitle;
+    }
+
+}

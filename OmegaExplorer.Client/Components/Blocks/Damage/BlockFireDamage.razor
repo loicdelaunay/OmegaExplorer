@@ -1,0 +1,35 @@
+﻿@using OmegaExplorer.Client.Models
+@using OmegaExplorer.Client.Utilities.Resources
+
+<MudImage Class="ignore-interaction" Style="@GetStyle()" Height="FireDamage.Height" Width="FireDamage.Width"
+          Src="@ResourceAnimation.DAMAGE_FIRE"></MudImage>
+
+@code {
+    [Parameter]
+    public FireDamage FireDamage { get; set; }
+
+    [Parameter]
+    public bool IsReverse { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (IsReverse)
+        {
+            FireDamage.X = -FireDamage.X;
+        }
+    }
+
+    private string? GetStyle()
+    {
+        string style = $@"
+        position: absolute;
+        top: calc(50% + {FireDamage.Y}px);
+        left: calc(50% + {FireDamage.X}px);
+        transform: translate(-50%, -50%);
+        z-index: 1;
+    ";
+
+        return style;
+    }
+
+}

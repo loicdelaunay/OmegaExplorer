@@ -1,0 +1,39 @@
+﻿@using OmegaExplorer.Client.Utilities.Resources
+<MudTooltip Text="@Modifier.Name">
+<MudPaper Outlined="true" Class="@GetClass()">
+    <MudStack Spacing="1" AlignItems="AlignItems.Center" Justify="Justify.Center" Row="true">
+        <MudText Class="ml-1" Style="margin-top: 2px" Typo="Typo.caption">
+            <b>@Modifier?.Amount</b>
+        </MudText>
+        <MudImage Height="20" Src="@GetResourceImage()"></MudImage>
+    </MudStack>
+</MudPaper>
+</MudTooltip>
+
+@code {
+    [Parameter]
+    public ModifierResource Modifier { get; set; } = null!;
+
+    private string GetResourceImage()
+    {
+        string path = ResourceImage.GetImageGameResource(index: Modifier.Index);
+
+        return path;
+    }
+
+    private string GetClass()
+    {
+        string style = "cursor-pointer hoverable-animation ";
+        
+        if (Modifier.Amount > 0)
+        {
+            style += "modifier-positive";
+        }
+        else
+        {
+            style += "modifier-negative";
+        }
+
+        return style;
+    }
+}

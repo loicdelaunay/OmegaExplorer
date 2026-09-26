@@ -1,0 +1,384 @@
+﻿@using System.Reflection
+@using OmegaExplorer.Client.Models.Card
+@using OmegaExplorer.Client.Utilities.Enums
+@using OmegaExplorer.Client.Utilities.Resources
+
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+
+@if (!Hidden)
+{
+    <span class="@GetCardContainerClasses()" style="min-width: @GetSize()px" @ondblclick="CallCardClicked">
+        <MudPaper Class="@GetCardClasses()" Outlined="true">
+            @if (Definition == null)
+            {
+                <MudProgressCircular Color="Color.Primary"></MudProgressCircular>
+            }
+            else
+            {
+                @if (Definition.Exception != null)
+                {
+                    <MudText Color="Color.Error">Error : @Definition.Exception</MudText>
+                    <MudButton Color="Color.Warning" OnClick="@(() => OpenDebugDialog(this))">Debug</MudButton>
+                }
+                else
+                {
+                    @if (Definition.Owner != null)
+                    {
+                        <MudTooltip Text="@Definition.Owner.Name">
+                            <MudAvatar Size="Size.Medium">@Definition.Owner.Name.First()</MudAvatar>
+                        </MudTooltip>
+                    }
+
+                    <MudStack Class="ma-2" AlignItems="AlignItems.Center" Justify="Justify.Center">
+                        <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center"
+                                  Style="height: 100px; width: 100px">
+                            @switch (Definition.ImageMode)
+                            {
+                                case CardDefinition.EnumImageMode.Img:
+                                    <MudImage Fluid="Definition.Settings.HeaderImageFluid"
+                                              Height="@(10 * Definition.Settings.HeaderImageSizeFactor)"
+                                              Style="max-width: 100%; object-fit: contain"
+                                              Src="@Definition.ImageHeader">
+                                    </MudImage>
+                                    break;
+                                case CardDefinition.EnumImageMode.Lottie:
+                                    break;
+                                default:
+                                    <MudText Color="Color.Error">??? @Definition.ImageMode no image mode found</MudText>
+                                    break;
+                            }
+                        </MudStack>
+
+                        <!-- Progress -->
+                        @if (Definition?.Progress != null)
+                        {
+                            <MudPaper Class="pa-2 w-100">
+                                <MudText>
+                                    @Definition.Progress.Title : (@Definition.Progress.Value
+                                    /@Definition.Progress.MaxValue)
+                                </MudText>
+                                <MudProgressLinear Color="Color.Primary" Value="@Definition.Progress.Value"
+                                                   Max="@Definition.Progress.MaxValue">
+                                </MudProgressLinear>
+                            </MudPaper>
+                        }
+
+                        <MudStack Class="w-100" Spacing="0">
+
+                            <!-- Title -->
+                            <MudText Typo="Typo.body2">
+                                <b>@Definition.Title</b>
+                            </MudText>
+
+                            <!-- Subtitle -->
+                            <div class="@GetCardSubtitleClasses()">
+                                <MudTooltip Text="@Definition.Subtitle">
+                                    <MudText Class="multiline" Typo="Typo.caption">@Definition.Subtitle</MudText>
+                                </MudTooltip>
+                            </div>
+
+                            @if (Definition.Settings.IsLocked)
+                            {
+                                <MudText Color="Color.Warning">Locked</MudText>
+                                <MudText>@Definition.Settings.LockedReason</MudText>
+                            }
+                            else
+                            {
+                                <!-- Contents -->
+                                <MudDivider Class="mb-2" DividerType="DividerType.FullWidth"></MudDivider>
+                                @foreach (CardContent content in Definition.Contents)
+                                {
+                                    <CardComponentContent Content="content"></CardComponentContent>
+                                }
+                            }
+
+                        </MudStack>
+
+                        <!-- Text -->
+                        <MudText Style="max-width: 200px" Class="overflow-auto"
+                                 Typo="Typo.body2">@((MarkupString) Definition.Text)</MudText>
+
+                        @foreach(RenderFragment fragment in Definition.Fragments)
+                        {
+                            @fragment
+                        }
+
+                        <!-- Rarity -->
+                        <ChipRarity Rarity="Definition.Rarity"></ChipRarity>
+
+                        <!-- Actions UI -->
+                        @if (!Definition.Settings.IsLocked)
+                        {
+                            @if (Mode == EnumCardMode.Picker)
+                            {
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                           OnClick="CallCardClicked">Pick</MudButton>
+
+                                @if (MainLayout.UserSettings.IsDev)
+                                {
+                                    <MudButton Color="Color.Warning" OnClick="(() => OpenDebugDialog(this))">Debug</MudButton>
+                                }
+                            }
+                            else
+                            {
+                                <MudStack Row="true">
+                                @foreach (CardAction action in Definition.Actions.Take(3))
+                                    {
+                                        <MudIconButtonWithLabel Variant="Variant.Outlined" Size="Size.Small"
+                                                                Color="@action.Color"
+                                                                Icon="@action.Icon"
+                                                                OnClick="() => CallDefinitionMethod(action)"
+                                                                Label="@action.Title">
+                            </MudIconButtonWithLabel>
+                                    }
+
+                                    @if (Definition.Actions.Count > 3)
+                                    {
+                                        <MudIconButtonWithLabel Color="Color.Primary" OnClick="OnMoreActionsClicked"
+                                                                Icon="@ResourceIcon.MORE"
+                                                                Label="More Actions"></MudIconButtonWithLabel>
+                                    }
+
+                            </MudStack>
+                            }
+                        }
+
+
+                    </MudStack>
+
+                    @if (_showMoreActions)
+                    {
+                        <MudPaper Class="pa-2" Outlined="true">
+                            <MudStack Row="true">
+                                @foreach (CardAction action in Definition.Actions.Skip(3))
+                                {
+                                    <MudIconButtonWithLabel Variant="Variant.Outlined" Size="Size.Small"
+                                                            Color="@action.Color"
+                                                            Icon="@action.Icon"
+                                                            OnClick="() => CallDefinitionMethod(action)"
+                                                            Label="@action.Title">
+                                    </MudIconButtonWithLabel>
+                                }
+                            </MudStack>
+                        </MudPaper>
+                    }
+                }
+            }
+        </MudPaper>
+    </span>
+}
+
+@code {
+
+    [Parameter]
+    public CardDefinition? Definition { get; set; }
+
+    [Parameter]
+    public EventCallback<Card> OnDeleted { get; set; }
+
+    [Parameter]
+    public EventCallback<Card> OnClicked { get; set; }
+
+    [Parameter]
+    public EventCallback<Card> OnUpdate { get; set; }
+
+    [Parameter]
+    public Size Size { get; set; } = Size.Small;
+
+    [Parameter]
+    public EnumCardMode Mode { get; set; } = EnumCardMode.Standard;
+
+    [Parameter]
+    public bool Hidden { get; set; }
+
+    [Parameter]
+    public bool Hoverable { get; set; }
+
+    public ISnackbar ImplSnackbar = null!;
+    public IDialogService ImplDialogService = null!;
+    public NavigationManager ImplNavigationManager = null!;
+
+    public bool IsSelected;
+
+    private bool _showMoreActions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ImplSnackbar = Snackbar;
+        ImplDialogService = DialogService;
+        ImplNavigationManager = NavigationManager;
+
+        await base.OnInitializedAsync();
+    }
+
+    protected override void OnParametersSet()
+    {
+        @if (MainLayout.UserSettings.IsDev)
+        {
+            if (Definition.Actions.Exists(d => d.Color == Color.Warning && d.Title.Contains("Debug")))
+            {
+                return;
+            }
+
+            Definition?.Actions.Add(new CardAction($"Debug : {Definition.Title}", ResourceIcon.DEBUG, nameof(OpenDebugDialog), Color.Warning, cardMethod: true));
+        }
+
+        base.OnParametersSet();
+    }
+
+    private void CallDefinitionMethod(CardAction action)
+    {
+        if (Definition == null)
+        {
+            Snackbar.Add("Card definition is null", Severity.Error);
+            return;
+        }
+
+        if (action.CardMethod)
+        {
+            CallMethod(action.Function, parameters: new[]
+            {
+                this,
+            });
+        }
+        else
+        {
+            Definition.CallMethod(action.Function, parameters: new[]
+            {
+                this,
+            });
+        }
+    }
+
+    private string GetCardClasses()
+    {
+        string res = "card pa-1 ma-1 hoverable-animation";
+
+        if (Definition is {Rarity: not null})
+        {
+            res += " card-" + Definition.Rarity.ToString().ToLower();
+        }
+
+        return res;
+    }
+
+    private int GetSize()
+    {
+        int size = Size switch
+        {
+            Size.Small => 256,
+            Size.Medium => 400,
+            Size.Large => 512,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        return size;
+    }
+
+    /// <summary>
+    /// Call delete this card.
+    /// </summary>
+    public void CallDelete()
+    {
+        OnDeleted.InvokeAsync(this);
+    }
+
+    /// <summary>
+    /// Call update the content of this card
+    /// </summary>
+    /// <exception cref="NotImplementedException"></exception>
+    [Obsolete("Not used")]
+    public void CallUpdateCard()
+    {
+        throw new NotImplementedException("CallUpdateCard is not implemented in Card component.");
+    }
+
+    /// <summary>
+    /// Call update the stack of cards.
+    /// </summary>
+    public void CallUpdateCardsStack()
+    {
+        OnUpdate.InvokeAsync(this);
+    }
+
+    public void CallCardClicked()
+    {
+        if(Definition is { Settings: { IsLocked: true } })
+        {
+            return;
+        }
+        
+        OnClicked.InvokeAsync(this);
+    }
+
+    public void ForceStateHasChanged()
+    {
+        StateHasChanged();
+    }
+
+    public void SetSelected(bool selected)
+    {
+        IsSelected = selected;
+    }
+
+    private void OnMoreActionsClicked()
+    {
+        _showMoreActions = !_showMoreActions;
+        StateHasChanged();
+    }
+
+    private void CallMethod(string name, object? obj = null, Card[] parameters = null!)
+    {
+        Type type = GetType();
+
+        MethodInfo? myMethod = type.GetMethod(name);
+
+        if (myMethod != null)
+        {
+            try
+            {
+                myMethod.Invoke(this, parameters);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+        }
+        else
+        {
+            Console.WriteLine("Method not found in card " + name);
+        }
+    }
+
+    public void OpenDebugDialog(Card card)
+    {
+        MainLayout.Instance.DialogTemplates.OpenDialogDebug(Definition);
+    }
+
+    private string GetCardContainerClasses()
+    {
+        string res = "card-container";
+
+        if (Hoverable)
+        {
+            res += "  card-container-hoverable";
+        }
+
+        return res;
+    }
+
+    private string GetCardSubtitleClasses()
+    {
+        if (Definition.SubtitleMultiline)
+        {
+            return "card-description-multiline";
+        }
+        else
+        {
+            return "card-description";
+        }
+    }
+
+}

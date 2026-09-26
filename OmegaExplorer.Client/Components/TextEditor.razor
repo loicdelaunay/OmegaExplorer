@@ -1,0 +1,97 @@
+﻿@inject ISnackbar Snackbar
+@implements IDisposable;
+
+<span style="height: 500px">
+    <StandaloneCodeEditor CssClass="text-editor" @ref="_editor" Id="text-editor" ConstructionOptions="EditorConstructionOptions"/>
+</span>
+
+@code {
+    private StandaloneCodeEditor _editor;
+
+    [Parameter]
+    public string? DefaultData { get; set; }
+
+    [Parameter]
+    public string Language { get; set; } = "json";
+
+    [Parameter]
+    public bool ReadOnly { get; set; } = false;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        if (DefaultData != null)
+        {
+            await InitializeEditor();
+        }
+    }
+
+    private async Task InitializeEditor()
+    {
+        int maxLoop = 20;
+
+        while (_editor == null && maxLoop > 0)
+        {
+            await Task.Delay(300);
+            maxLoop--;
+        }
+
+        if (maxLoop == 0)
+        {
+            Snackbar.Add(message: "Error initializing editor", severity: Severity.Error);
+        }
+        else
+        {
+            _editor.SetValue(DefaultData);
+        }
+    }
+
+    public async Task SetData(string data)
+    {
+        try
+        {
+            await _editor.SetValue(newValue: data);
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add(message: "Error setting data in editor", severity: Severity.Error);
+        }
+    }
+
+    public async Task<string> GetData()
+    {
+        string? res = string.Empty;
+
+        try
+        {
+            res = await _editor?.GetValue();
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add(message: "Error getting data from editor", severity: Severity.Error);
+        }
+
+        return res;
+    }
+
+    private StandaloneEditorConstructionOptions EditorConstructionOptions(StandaloneCodeEditor editor)
+    {
+        StandaloneEditorConstructionOptions res = new StandaloneEditorConstructionOptions
+        {
+            AutomaticLayout = true,
+            Language = Language,
+            Value = DefaultData,
+            ReadOnly = ReadOnly,
+        };
+        
+        return res;
+    }
+
+    public void Dispose()
+    {
+        _editor.Dispose();
+        Snackbar?.Dispose();
+    }
+
+}

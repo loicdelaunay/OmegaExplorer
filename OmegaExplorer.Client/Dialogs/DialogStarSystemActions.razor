@@ -1,0 +1,82 @@
+﻿@using OmegaExplorer.Client.Models.Card.Definition
+@using OmegaExplorer.Client.Utilities.Resources
+
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+<MudDialog>
+    <DialogContent>
+        <Header Dialog="true" OnClose="@(() => Close())" Size="Size.Small" Title="Select your action"
+                Subtitle="@GetSubtitle()" Icon="@ResourceIcon.ACTIONS">
+        </Header>
+        <MudStack>
+            
+            <BlockCardWithImage
+                Title="Build spaceship" Disabled="!_canBuildSpaceship" DisabledText="No structure to build spaceship"
+                Image="@ResourceImage.BUILD_SPACESHIP" OnClick="OnClickBuildSpaceship">
+            </BlockCardWithImage>
+            
+        </MudStack>
+    </DialogContent>
+</MudDialog>
+
+@code{
+
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; }
+    
+    [Parameter]
+    public ResponseStarSystem StarSystem { get; set; }
+
+    private bool _canBuildSpaceship;
+
+    protected override void OnInitialized()
+    {
+        _canBuildSpaceship = StarSystem.Buildings.Exists(building => building.Data.Actions.Contains(EnumBuildingAction.BuildSpaceship));
+        
+        base.OnInitialized();
+    }
+
+    private void Close()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task OnClickBuildSpaceship()
+    {
+        //Select a blueprint to build
+        ResponseBlueprintSpaceship? blueprint = await MainLayout.Instance.DialogTemplates.OpenPicker<CardDefinitionBlueprintSpaceship, ResponseBlueprintSpaceship>
+            ("Select spaceship to built", "from your blueprint", "/blueprint-spaceship");
+
+        if (blueprint == null)
+        {
+            return;
+        }
+        
+        RequestCreateSpaceship request = new()
+        {
+             BlueprintId = blueprint.Id,
+            StarSystemId = StarSystem.Id
+        };
+
+        try
+        {
+            ResponseSpaceship? newSpaceship = await ApiManager.Client.CreateSpaceshipAsync(request);
+            Snackbar.Add($"Spaceship {blueprint.Name} built", Severity.Success);
+            NavigationManager.NavigateTo($"/spaceship/{newSpaceship.Id}");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            Snackbar.Add($"Error while building spaceship : {e.Message}", Severity.Error);
+        }
+    }
+
+    private string GetSubtitle()
+    {
+        string res = $"on {StarSystem.Name}";
+
+        return res;
+    }
+
+}

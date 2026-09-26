@@ -1,0 +1,27 @@
+﻿@page "/personalities"
+@using OmegaExplorer.Client.Models.Card.Definition
+@using OmegaExplorer.Client.Utilities.Resources
+@inject ISnackbar Snackbar
+
+<Header Title="personalities" Subtitle="Manage your personalities"></Header>
+
+<DynamicCardStack @ref="_cardStack" TCardDefinition="CardDefinitionPersonality">
+    <MudIconButtonWithLabel Icon="@ResourceIcon.CREATE" OnClick="OnCallCreatePersonality"></MudIconButtonWithLabel>
+</DynamicCardStack>
+
+@code {
+    private DynamicCardStack<CardDefinitionPersonality> _cardStack;
+
+    private async void OnCallCreatePersonality()
+    {
+        try
+        {
+            await ApiManager.Client.CreatePersonalityAsync();
+            _cardStack.Get();   
+        }catch(Exception e)
+        {
+            Snackbar.Add($"Not able to create personality {e.Message}", Severity.Error);
+        }
+    }
+
+}

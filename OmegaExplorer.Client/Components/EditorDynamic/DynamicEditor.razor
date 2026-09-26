@@ -1,0 +1,18 @@
+﻿<MudText Typo="Typo.body1">@_data</MudText>
+
+@code {
+    private string _data;
+
+    public void SetData(string data)
+    {
+        Console.WriteLine(value: $"set value to {data}");
+        _data = data;
+        StateHasChanged();
+    }
+
+    public string GetData()
+    {
+        return _data;
+    }
+
+}

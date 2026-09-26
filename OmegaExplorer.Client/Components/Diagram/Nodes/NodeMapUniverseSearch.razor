@@ -1,0 +1,48 @@
+﻿@using OmegaExplorer.Client.Components.Diagram.Nodes.Models
+@using OmegaExplorer.Client.Models.Card.Definition
+
+@if(Node != null)
+{
+    <ContentHover>
+        <Content>
+            <MudStack>
+                <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center">
+                    <PreviewGalaxy Galaxy="Node.Galaxy" Height="50"></PreviewGalaxy>
+                    <MudPaper Class="pa-2">
+                        <MudStack Spacing="0">
+                            <MudText><b>@Node.Galaxy.Name</b></MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudStack>
+            </MudStack>
+        </Content>
+        <HoverContent>
+            @{
+                CardDefinitionGalaxy? definition = GetCardDefinition();
+
+                if (definition != null)
+                {
+                    <Card Hoverable="false" Definition="@definition"></Card>
+                }
+            }
+    </HoverContent>
+</ContentHover>
+}
+
+@code {
+
+    [Parameter]
+    public NodeModelMapUniverseSearch? Node { get; set; }
+
+    private CardDefinitionGalaxy? GetCardDefinition()
+    {
+        if (Node == null)
+        {
+            return null;
+        }
+
+        return new CardDefinitionGalaxy(Node.Galaxy);
+    }
+
+}
+

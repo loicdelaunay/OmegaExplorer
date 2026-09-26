@@ -1,0 +1,135 @@
+﻿@page "/start/origin"
+@using OmegaExplorer.Client.Models.Card.Definition
+@using OmegaExplorer.Client.Utilities.Resources
+@using Serilog
+@using OmegaExplorer.Client.Utilities.Extensions
+@using OmegaExplorer.Client.Utilities.Enums
+
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<BackgroundAnimation></BackgroundAnimation>
+
+
+<MudStack Style="height: 100%;" AlignItems="AlignItems.Center" Justify="Justify.Center">
+    <MudCard Outlined="true" Class="main-form-card-xl">
+        
+        @* Planet image *@
+        <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center">
+            <MudCardMedia Image="@ResourceAnimation.PLANET_STANDARD_1" Style="width: 300px;" Height="200"/>
+        </MudStack>
+
+        @* Divider *@
+        <MudDivider Light="true" DividerType="DividerType.FullWidth"></MudDivider>
+        
+        @* Card content *@
+        <MudCardContent Style="padding-top: 0 !important;">
+            
+            <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center">
+                <MudButton OnClick="OnClickBack">Back</MudButton>
+                <MudText Typo="Typo.h6">OmegaExplorer : Origin</MudText>
+            </MudStack>
+
+            <MudStack>
+                <MudText>Selected species is @_selectedSpecies?.Name</MudText>
+                <MudText>Selected history is @_selectedOriginHistory?.Name</MudText>
+
+                @if (_selectedSpecies == null)
+                {
+                    <DynamicCardStack DisableToolbar="true" DisableSearch="true" Mode="EnumCardMode.Picker" OnDefinitionClicked="OnSpeciesSelected"
+                                      TCardDefinition="CardDefinitionSpecies"></DynamicCardStack>
+                }
+
+                @if (_selectedSpecies != null)
+                {
+                    <MudButton Color="Color.Primary" Variant="Variant.Outlined" OnClick="OnReturnSelectSpecies">Return to species selection</MudButton>
+                    <DynamicCardStack DisableToolbar="true" DisableSearch="true" Mode="EnumCardMode.Picker" OnDefinitionClicked="OnOriginHistorySelected"
+                                      TCardDefinition="CardDefinitionOriginHistory"></DynamicCardStack>
+                }
+
+                @if (_selectedSpecies != null && _selectedOriginHistory != null)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnValidateOrigin">Valid origin
+                    </MudButton>
+                }
+            </MudStack>
+        </MudCardContent>
+    </MudCard>
+</MudStack>
+
+@code {
+
+
+    private ResponseOrigin? _origin;
+
+    private IDynamicItemSpecies? _selectedSpecies;
+    private IDynamicItemOriginHistory? _selectedOriginHistory;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        //Refresh user data
+        await ApiAuth.RefreshUser();
+
+        ResponseUser? user = ApiAuth.UserConnected;
+        if (user == null)
+        {
+            //Redirect to log in
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+
+        _origin = ApiAuth.UserConnected.Origin;
+        await base.OnInitializedAsync();
+    }
+
+    private async Task OnValidateOrigin()
+    {
+        try
+        {
+            RequestUpdateOrigin req = new()
+            {
+                IndexHistory = _selectedOriginHistory.Index,
+                IndexSpecies = _selectedSpecies.Index
+            };
+
+            ResponseOrigin? origin = await ApiManager.Client.UpdateOriginByUserAsync(req);
+            ApiAuth.UserConnected.Origin = origin;
+
+            MainLayout.Instance.ImplSnackbar.Add("Origin updated", Severity.Success);
+
+            MainLayout.Instance.ForceStateHasChanged();
+            NavigationManager.NavigateTo("/");
+        }
+        catch (Exception e)
+        {
+            Log.Logger.Error(e, $"[${nameof(PageStartSelectOrigin)}] : error while updating origin");
+            Snackbar.Add($"Not able to update origin : {e.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnSpeciesSelected(CardDefinitionSpecies cardSpeciesSelected)
+    {
+        _selectedSpecies = cardSpeciesSelected.Species;
+        StateHasChanged();
+    }
+
+    private void OnOriginHistorySelected(CardDefinitionOriginHistory cardDefinitionOriginHistory)
+    {
+        _selectedOriginHistory = cardDefinitionOriginHistory.OriginHistory;
+        StateHasChanged();
+    }
+
+    private void OnReturnSelectSpecies()
+    {
+        _selectedSpecies = null;
+        StateHasChanged();
+    }
+
+    private async Task OnClickBack()
+    {
+        await ApiAuth.Disconnect();
+    }
+
+}

@@ -1,0 +1,38 @@
+﻿@if (IsReadOnly)
+{
+    <MudCard Class="card-message card-message-left" Elevation="0">
+        <MudText Typo="Typo.body1">@Choice.Name</MudText>
+        <MudText Typo="Typo.body1">@Choice.Description</MudText>
+    </MudCard>
+    
+}
+else
+{
+    <MudCard Outlined="true" Class="pa-2">
+        <MudStack>
+            <MudText>@Choice.Name</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       OnClick="OnChoiceSelect">@Choice.Description</MudButton>
+        </MudStack>
+    </MudCard>
+
+}
+
+
+@code {
+
+    [Parameter]
+    public ResponseDynamicItemScenarioChoice Choice { get; set; }
+
+    [Parameter]
+    public Action<ResponseDynamicItemScenarioChoice> OnChoiceSelected { get; set; }
+
+    [Parameter]
+    public bool IsReadOnly { get; set; }
+    
+    private void OnChoiceSelect()
+    {
+        OnChoiceSelected?.Invoke(Choice);
+    }
+
+}

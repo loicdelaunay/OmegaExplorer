@@ -1,0 +1,55 @@
+﻿@page "/start/username"
+@using OmegaExplorer.Client.Utilities.Extensions
+@using OmegaExplorer.Client.Utilities.Resources
+
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<BackgroundAnimation></BackgroundAnimation>
+
+<MudStack Style="height: 80vh;" AlignItems="AlignItems.Center" Justify="Justify.Center">
+    <MudStack Row="true" Spacing="0">
+        @* Form for select name *@
+        <MudCard Square="true" Outlined="true" Class="main-form-card rounded-tl-xl rounded-bl-xl">
+            <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center">
+                <MudCardMedia Image="@ResourceAnimation.PLANET_STANDARD_1" Style="width: 300px;" Height="200"/>
+            </MudStack>
+             
+            <MudDivider Light="true" DividerType="DividerType.FullWidth"></MudDivider>
+            
+            <div class="pa-2 ma-2">
+                <BlockUpdateUserName></BlockUpdateUserName>
+            </div>
+
+        </MudCard>
+
+        @* Second form for features *@
+        <MudCard Square="true" Class="second-form-card rounded-tr-xl rounded-br-xl">
+            <MudStack Class="pa-2 ma-2 h-100" Justify="Justify.Center">
+                <BlockFeature IconText="ℹ️" Title="Select a username"
+                              Description="You can change it later if you want"></BlockFeature>
+            </MudStack>
+        </MudCard>
+    </MudStack>
+</MudStack>
+
+@code {
+
+    protected override async Task OnInitializedAsync()
+    {
+        //Refresh user data
+        await ApiAuth.RefreshUser();
+
+        if (ApiAuth.UserConnected == null || !string.IsNullOrEmpty(ApiAuth.UserConnected.Name))
+        {
+            NavigationManager.NavigateToPage<PageHome>();
+        }
+    }
+    
+    private async Task OnClickBack()
+    {
+        await ApiAuth.Disconnect();
+        NavigationManager.NavigateToPage<PageHome>();
+    }
+
+}

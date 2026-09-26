@@ -1,0 +1,90 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35919.96 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OmegaExplorer.Client", "OmegaExplorer.Client\OmegaExplorer.Client.csproj", "{4549A059-8CDE-47EE-9CD3-D81EB8C1F8B1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OmegaExplorer.Server", "OmegaExplorer.Server\OmegaExplorer.Server.csproj", "{124D273C-66C6-471B-934A-6ADEB749BC68}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "OmegaExplorer.Shared", "OmegaExplorer.Shared\OmegaExplorer.Shared.shproj", "{4647F325-212D-4BB5-B3CE-A7753D443314}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OmegaExplorer.Deployer", "OmegaExplorer.Deployer\OmegaExplorer.Deployer.csproj", "{3F041711-B416-44AD-BAE8-4407CF2D53CC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Server", "Server", "{D11ABC9A-1C0E-44C8-ACBC-4A848D0D378F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Client", "Client", "{533C3E07-2CB9-4940-B485-BD243C4B337E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{17F40682-DE7C-4AAA-AA44-3779F9351F1C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OmegaExplorer.Server.Test", "OmegaExplorer.Server.Test\OmegaExplorer.Server.Test.csproj", "{6F491F7A-CFDE-4D87-BD12-7633EEE0163C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OmegaExplorer.Client.Translator", "OmegaExplorer.Client.Translator\OmegaExplorer.Client.Translator.csproj", "{1C507257-81B1-4225-BD01-7CA1A46303DD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OmegaExplorer.Server.Compute", "OmegaExplorer.Server.Compute\OmegaExplorer.Server.Compute.csproj", "{355FBF4D-1FEB-4DB7-A1AB-BE8F3BA5B23A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Orchestrator", "Orchestrator", "{C0BAE03F-A24A-4E8E-8F25-F94F833AF390}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OmegaExplorer.Aspire.ServiceDefault", "OmegaExplorer.Aspire.ServiceDefault\OmegaExplorer.Aspire.ServiceDefault.csproj", "{BC7E86A2-5033-4111-8FC2-3E1016270502}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OmegaExplorer.Aspire.AppHost", "OmegaExplorer.Aspire.AppHost\OmegaExplorer.Aspire.AppHost.csproj", "{82E281F2-0FE7-44F3-B1A2-BFC554D0D4C4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4549A059-8CDE-47EE-9CD3-D81EB8C1F8B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4549A059-8CDE-47EE-9CD3-D81EB8C1F8B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4549A059-8CDE-47EE-9CD3-D81EB8C1F8B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4549A059-8CDE-47EE-9CD3-D81EB8C1F8B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{124D273C-66C6-471B-934A-6ADEB749BC68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{124D273C-66C6-471B-934A-6ADEB749BC68}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{124D273C-66C6-471B-934A-6ADEB749BC68}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{124D273C-66C6-471B-934A-6ADEB749BC68}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F041711-B416-44AD-BAE8-4407CF2D53CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F041711-B416-44AD-BAE8-4407CF2D53CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F041711-B416-44AD-BAE8-4407CF2D53CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F041711-B416-44AD-BAE8-4407CF2D53CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F491F7A-CFDE-4D87-BD12-7633EEE0163C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F491F7A-CFDE-4D87-BD12-7633EEE0163C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F491F7A-CFDE-4D87-BD12-7633EEE0163C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F491F7A-CFDE-4D87-BD12-7633EEE0163C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C507257-81B1-4225-BD01-7CA1A46303DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C507257-81B1-4225-BD01-7CA1A46303DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C507257-81B1-4225-BD01-7CA1A46303DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C507257-81B1-4225-BD01-7CA1A46303DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{355FBF4D-1FEB-4DB7-A1AB-BE8F3BA5B23A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{355FBF4D-1FEB-4DB7-A1AB-BE8F3BA5B23A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{355FBF4D-1FEB-4DB7-A1AB-BE8F3BA5B23A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{355FBF4D-1FEB-4DB7-A1AB-BE8F3BA5B23A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC7E86A2-5033-4111-8FC2-3E1016270502}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC7E86A2-5033-4111-8FC2-3E1016270502}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC7E86A2-5033-4111-8FC2-3E1016270502}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC7E86A2-5033-4111-8FC2-3E1016270502}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82E281F2-0FE7-44F3-B1A2-BFC554D0D4C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82E281F2-0FE7-44F3-B1A2-BFC554D0D4C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82E281F2-0FE7-44F3-B1A2-BFC554D0D4C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82E281F2-0FE7-44F3-B1A2-BFC554D0D4C4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4549A059-8CDE-47EE-9CD3-D81EB8C1F8B1} = {533C3E07-2CB9-4940-B485-BD243C4B337E}
+		{124D273C-66C6-471B-934A-6ADEB749BC68} = {D11ABC9A-1C0E-44C8-ACBC-4A848D0D378F}
+		{3F041711-B416-44AD-BAE8-4407CF2D53CC} = {17F40682-DE7C-4AAA-AA44-3779F9351F1C}
+		{6F491F7A-CFDE-4D87-BD12-7633EEE0163C} = {D11ABC9A-1C0E-44C8-ACBC-4A848D0D378F}
+		{1C507257-81B1-4225-BD01-7CA1A46303DD} = {533C3E07-2CB9-4940-B485-BD243C4B337E}
+		{355FBF4D-1FEB-4DB7-A1AB-BE8F3BA5B23A} = {D11ABC9A-1C0E-44C8-ACBC-4A848D0D378F}
+		{BC7E86A2-5033-4111-8FC2-3E1016270502} = {C0BAE03F-A24A-4E8E-8F25-F94F833AF390}
+		{82E281F2-0FE7-44F3-B1A2-BFC554D0D4C4} = {C0BAE03F-A24A-4E8E-8F25-F94F833AF390}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		OmegaExplorer.Shared\OmegaExplorer.Shared.projitems*{124d273c-66c6-471b-934a-6adeb749bc68}*SharedItemsImports = 5
+		OmegaExplorer.Shared\OmegaExplorer.Shared.projitems*{3f041711-b416-44ad-bae8-4407cf2d53cc}*SharedItemsImports = 5
+		OmegaExplorer.Shared\OmegaExplorer.Shared.projitems*{4549a059-8cde-47ee-9cd3-d81eb8c1f8b1}*SharedItemsImports = 5
+		OmegaExplorer.Shared\OmegaExplorer.Shared.projitems*{4647f325-212d-4bb5-b3ce-a7753d443314}*SharedItemsImports = 13
+	EndGlobalSection
+EndGlobal

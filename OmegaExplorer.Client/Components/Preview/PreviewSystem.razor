@@ -1,0 +1,28 @@
+﻿@using OmegaExplorer.Client.Utilities.Extensions
+
+<MudImage Fluid="Fluid" Height="@Height" Width="@Height" Src="@Source"></MudImage>
+
+@code {
+
+    [Parameter]
+    public int Height { get; set; } = 250;
+
+    [Parameter]
+    public string? Source { get; set; }
+
+    [Parameter]
+    public ResponseStarSystem? StarSystem { get; set; }
+
+    [Parameter]
+    public bool Fluid { get; set; } = false;
+    
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Source == null && StarSystem != null)
+        {
+            Source = StarSystem.StarSystemType.GetImage(StarSystem.PlanetType);
+        }
+    }
+
+}

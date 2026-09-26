@@ -1,0 +1,70 @@
+﻿@page "/map/star-cluster/{StarClusterId:guid}"
+
+@using OmegaExplorer.Client.Components.Maps.Drivers
+@using OmegaExplorer.Client.Models.Card.Definition
+@using Serilog
+@using OmegaExplorer.Shared.Filters
+
+<CheckConnection></CheckConnection>
+<Header title="Map star cluster" Subtitle="Navigate through the space !"></Header>
+
+<BreadcrumbsMap @ref="_breadcrumbsMap"></BreadcrumbsMap>
+
+<DynamicPageMap @ref="_dynamicPageMap" Id="@StarClusterId" EnableSecondCardStack="true"
+                TDynamicMapDriver="DynamicMapDriverStarCluster"
+                TCardDefinition="CardDefinitionStarSystem" Filter="new DynamicDriverStarSystemFilter().FilterByStarClusterId(StarClusterId)"
+                TCardDefinition2="CardDefinitionSpaceship" FilterSecond="new DynamicDriverSpaceshipFilter().FilterByStarClusterId(StarClusterId)">
+</DynamicPageMap>
+
+
+@code {
+
+    [Parameter]
+    public Guid StarClusterId { get; set; }
+
+    private BreadcrumbsMap? _breadcrumbsMap;
+
+    private ResponseStarCluster? _starCluster;
+
+    private DynamicPageMap<DynamicMapDriverStarCluster, CardDefinitionStarSystem, CardDefinitionSpaceship>? _dynamicPageMap;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        await RetrieveStarCluster();
+        await InitializeBreadcrumbs();
+
+        await ApiAuth.AwaitConnection();
+    }
+
+    private async Task RetrieveStarCluster()
+    {
+        if (StarClusterId == Guid.Empty)
+        {
+            Log.Logger.Error($"[{nameof(PageMapStarCluster)}] : StarClusterId is empty, cannot update star cluster.");
+            return;
+        }
+
+        _starCluster = await ApiManager.Client.GetStarClusterByIdAsync(StarClusterId);
+
+        if (_starCluster == null)
+        {
+            Log.Logger.Error($"[{nameof(PageMapStarCluster)}] : StarCluster with ID {StarClusterId} not found.");
+            return;
+        }
+    }
+
+    private async Task InitializeBreadcrumbs()
+    {
+        if (_breadcrumbsMap == null)
+        {
+            Log.Logger.Error($"[{nameof(PageMapStarCluster)}] : BreadcrumbsMap is null, cannot initialize.");
+        }
+        else
+        {
+            await _breadcrumbsMap.Initialize(_starCluster);
+        }
+    }
+}

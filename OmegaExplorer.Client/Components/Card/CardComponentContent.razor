@@ -1,0 +1,95 @@
+﻿@using OmegaExplorer.Client.Models.Card
+@if (Content.Value?.Length + Content.Title?.Length > 35)
+{
+    <MudTooltip>
+        <ChildContent>
+            <MudText Color="Content.Color" Typo="Content.Typo" Class="truncate"
+                     Style="min-height: 20px !important; max-width: 280px; text-wrap: nowrap">
+                @FormatCardContent(Content)
+            </MudText>
+        </ChildContent>
+        <TooltipContent>
+            <MudPaper Outlined="false" MaxHeight="300px" MaxWidth="450px" Class="overflow-auto">
+                <MudStack Class="ma-5">
+                    <MudText Color="Content.Color" Typo="Typo.body1">@Content.Title</MudText>
+                    <MudText Color="Content.Color" Align="Align.Start" Typo="Typo.body2"
+                             Class="overflow-auto">
+                        @Content.Value
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+        </TooltipContent>
+    </MudTooltip>
+}
+else
+{
+    @if (string.IsNullOrEmpty(value: Content.ValueDetailed))
+    {
+        @if (string.IsNullOrEmpty(Content.TargetUrl))
+        {
+            <MudText Color="Content.Color" Typo="Content.Typo" Class="truncate"
+                     Style="min-height: 20px; max-width: 280px">
+                @FormatCardContent(Content)
+            </MudText>
+        }
+        else
+        {
+                <MudLink Color="Content.Color" Typo="Content.Typo" Class="truncate"
+                         Style="min-height: 20px; max-width: 280px" Href="@Content.TargetUrl">@FormatCardContent(Content)</MudLink>
+        }
+    }
+    else
+    {
+        <MudTooltip>
+            <ChildContent>
+                @if (string.IsNullOrEmpty(Content.TargetUrl))
+                {
+                <MudText Color="Content.Color" Typo="Content.Typo" Class="truncate"
+                         Style="min-height: 20px; max-width: 280px">
+                    @FormatCardContent(Content)
+                </MudText>
+                }
+                else
+                {
+                <MudLink Color="Content.Color" Typo="Content.Typo" Class="truncate"
+                         Style="min-height: 20px; max-width: 280px"
+                         Href="@Content.TargetUrl">@FormatCardContent(Content)</MudLink>
+                }
+            </ChildContent>
+            <TooltipContent>
+                <MudPaper Outlined="false" MaxHeight="300px" MaxWidth="550px"
+                          Class="overflow-auto">
+                    <MudStack Class="ma-5">
+                        <MudText Style="text-wrap: nowrap;" Color="Content.Color" Typo="Typo.body1">
+                            @Content.Title
+                        </MudText>
+                        <MudText Style="text-wrap: nowrap;" Color="Content.Color" Align="Align.Start" Typo="Typo.body2" Class="overflow-auto">
+                            <span style="white-space: pre-line">
+                                @Content.ValueDetailed
+                            </span>
+                        </MudText>
+                    </MudStack>
+                </MudPaper>
+            </TooltipContent>
+        </MudTooltip>
+    }
+}
+
+@code {
+    [Parameter] public CardContent Content { get; set; }
+
+    private MarkupString FormatCardContent(CardContent content)
+    {
+        string res = string.Empty;
+
+        res += $"<b>{content.Title}</b>";
+
+        if (!string.IsNullOrEmpty(content.Value))
+        {
+            res += $" : {content.Value}";
+        }
+
+        return new MarkupString(res);
+    }
+
+}

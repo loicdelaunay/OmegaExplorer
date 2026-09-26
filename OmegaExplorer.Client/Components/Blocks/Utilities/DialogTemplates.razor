@@ -1,0 +1,84 @@
+﻿@using OmegaExplorer.Client.Models.Card
+@using OmegaExplorer.Client.Utilities.Dialog
+@using OmegaExplorer.Shared.Filters
+@using OmegaExplorer.Shared.Utilities.Humanizer
+@inject IDialogService DialogService;
+@inject ISnackbar Snackbar;
+
+@code {
+
+    public async Task OpenDialogDebug(object objToDebug)
+    {
+        DialogParameters parameters = new() {[nameof(DialogDebug.ObjectToDebug)] = objToDebug};
+        DialogOptions options = DialogOptionTemplates.ExtraLargeDialogOptions();
+        IDialogReference dialog = await DialogService.ShowAsync<DialogDebug>("Debug", parameters, options);
+
+        DialogResult? result = await dialog.Result;
+    }
+
+    public async Task<TResponse?> OpenPicker<TDefinition, TResponse>(string? title = null, string? subtitle = null, string redirectIfEmpty = null, bool ignoreValue = false, DynamicDriverFilter? filter = null) where TDefinition : CardDefinition
+    {
+        DialogParameters parameters = new()
+        {
+            {nameof(DialogPicker<TDefinition, TResponse>.Title), title},
+            {nameof(DialogPicker<TDefinition, TResponse>.Subtitle), subtitle},
+            {nameof(DialogPicker<TDefinition, TResponse>.RedirectIfEmpty), redirectIfEmpty},
+            {nameof(DialogPicker<TDefinition, TResponse>.IgnoreValue), ignoreValue},
+            {nameof(DialogPicker<TDefinition, TResponse>.Filter), filter}
+        };
+        DialogOptions options = DialogOptionTemplates.DefaultDialogOptions();
+        IDialogReference dialog = await DialogService.ShowAsync<DialogPicker<TDefinition, TResponse>>(title, parameters, options);
+
+        DialogResult? dialogResult = await dialog.Result;
+
+        if (ignoreValue)
+        {
+            return default;
+        }
+
+        if (dialogResult.Data == null)
+        {
+            return default;
+        }
+
+        if (dialogResult.Data is TResponse dataPicked)
+        {
+            return dataPicked;
+        }
+
+        Snackbar.Add($"Data picked is not a {typeof(TResponse)} but is {dialogResult.Data.GetType()}", Severity.Error);
+        return default;
+    }
+
+    public async Task<bool> OpenDialogConfirm(string subject = "", string title = "Confirm deletion", string buttonText = "confirm", DialogTemplate.EnumType type = DialogTemplate.EnumType.Information, string message = "")
+    {
+        if (!string.IsNullOrEmpty(subject))
+        {
+            title += " of " + subject;
+            message = "Are you sure you want to delete " + subject + "?";
+        }
+
+        DialogParameters parameters = new()
+        {
+            {nameof(DialogTemplate.Title), title},
+            {nameof(DialogTemplate.Type), type},
+            {nameof(DialogTemplate.ContentText), message},
+            {nameof(DialogTemplate.ButtonText), buttonText.FirstLetterUpper()},
+            {nameof(DialogTemplate.Color), Color.Error}
+        };
+
+        DialogOptions options = DialogOptionTemplates.SmallDialogOptions();
+
+        IDialogReference dialog = await DialogService.ShowAsync<DialogTemplate>("Delete", parameters,
+                                                                                options);
+        DialogResult? result = await dialog.Result;
+
+        if (result.Canceled)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+}

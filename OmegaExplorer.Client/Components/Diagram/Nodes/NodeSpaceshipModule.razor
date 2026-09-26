@@ -1,0 +1,193 @@
+﻿@using OmegaExplorer.Client.Components.Diagram.Nodes.Models
+@using OmegaExplorer.Client.Models
+@using Serilog
+
+@using OmegaExplorer.Client.Utilities.Resources
+<MudPaper Outlined="true" Class="hoverable-animation module">
+    <div class="module-header">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center">
+            <MudStack Spacing="0">
+                <MudText>@Node.Module.Name</MudText>
+
+                @if (Node.Module.Data == null)
+                {
+                    <MudText Color="Color.Error">Node.Module.Data is null ??</MudText>
+                }
+
+                else if (Node.Module.Data.Brand != null)
+                {
+                    <MudText Typo="Typo.caption">@Node.Module.Data.Brand.Name</MudText>
+                }
+            </MudStack>
+
+            <MudTooltip Text="@Node.Module.Data?.Description">
+                <MudIcon Icon="@ResourceIcon.INFO"></MudIcon>
+            </MudTooltip>
+        </MudStack>
+    </div>
+
+    <MudImage Class="@GetImageClasses()" Fluid="true"
+              Src="@ResourceImage.GetImageSpaceshipModule(Node.Module.Index)"></MudImage>
+
+    @foreach (FireDamage fireDamage in _fireDamages)
+    {
+        <BlockFireDamage IsReverse="Node.IsReverse" FireDamage="@fireDamage"></BlockFireDamage>
+    }
+
+    <div class="module-actions">
+        <MudStack Row="true">
+            @if (MainLayout.UserSettings.IsDev)
+            {
+                <MudIconButtonWithLabel OnClick="OnClickDebug" Icon="@ResourceIcon.DEBUG" Label="Debug"
+                                        Color="Color.Warning">
+                </MudIconButtonWithLabel>
+            }
+
+            @if (!Node.IsReadOnly)
+            {
+                <MudIconButtonWithLabel OnClick="OnClickDelete" Icon="@ResourceIcon.DELETE" Label="Delete"
+                                        Color="Color.Error">
+                </MudIconButtonWithLabel>
+            }
+
+        </MudStack>
+    </div>
+
+    @if (Node.Spaceship != null)
+    {
+        <div class="module-footer">
+            <MudProgressLinear Value="Health" Max="100" Color="@ComputeHealthColor()"></MudProgressLinear>
+        </div>
+
+        <div class="module-footer-hover">
+            <MudProgressLinear Color="@ComputeHealthColor()" Size="Size.Large" Value="@Health" Max="100"
+                               Class="my-1" Rounded="true">
+                <MudText Typo="Typo.subtitle1" Color="Color.Dark">
+                    <b>Health : @Health/100</b>
+                </MudText>
+            </MudProgressLinear>
+        </div>
+    }
+</MudPaper>
+
+@code {
+
+    [Parameter]
+    public NodeModelSpaceshipModule Node { get; set; } = null!;
+
+    private List<FireDamage> _fireDamages = new();
+
+    public double Health;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+
+    protected override Task OnParametersSetAsync()
+    {
+        if (Node.Spaceship != null)
+        {
+            UpdateWithSpaceshipValues();
+        }
+
+        return base.OnParametersSetAsync();
+    }
+
+    private void UpdateWithSpaceshipValues()
+    {
+        //Need to do the link between the blueprint value and the current spaceship value
+        ResponseSpaceshipModule? nodeOfSpaceship = Node.Spaceship?.Modules.FirstOrDefault(module => module.X == Node.Module.X && module.Y == Node.Module.Y);
+
+        //Link modules health
+        if (nodeOfSpaceship == null)
+        {
+            Log.Logger.Error($"[{nameof(NodeSpaceshipModule)}] : Module not found in spaceship when linking blueprint to spaceship");
+        }
+        else
+        {
+            Health = nodeOfSpaceship.Health;
+        }
+
+        ComputeFireDamages();
+    }
+
+    private void OnClickDelete()
+    {
+        Node.OnDeleted?.Invoke(Node.Module);
+    }
+
+    private void OnClickDebug()
+    {
+        MainLayout.Instance.DialogTemplates.OpenDialogDebug(Node.Module);
+    }
+
+    private string GetImageClasses()
+    {
+        string res = "module-image image-antialiasing-pixel image-fill ignore-interaction";
+
+        if (Node.IsReverse)
+        {
+            res += " image-reverse";
+        }
+
+        return res;
+    }
+
+    private Color ComputeHealthColor()
+    {
+        Color res = Color.Success;
+
+        if (Health < 50)
+        {
+            res = Color.Warning;
+        }
+        else if (Health < 20)
+        {
+            res = Color.Error;
+        }
+
+        return res;
+    }
+
+    private void ComputeFireDamages()
+    {
+        // No calculation if the ship does not exist or if the life is > 50
+        if (Node.Spaceship == null || Health > 50)
+        {
+            _fireDamages.Clear();
+            return;
+        }
+
+        _fireDamages.Clear();
+
+        // Combine hash of Guid and Health to have a unique seed
+        int seed1 =Node.Spaceship.Id.GetHashCode();
+        int seed2 = Health.GetHashCode();
+        int seed3 = Node.Module.X + Node.Module.Y;
+
+        int seed = seed1 ^ seed2 ^ seed3;
+
+        // Deterministic pseudo-random generator
+        Random random = new(seed);
+
+        // Number of flames depending on healthGap
+        int healthGap = 50 - Node.Module.Health;
+        int numberOfFires = Math.Clamp(healthGap / 5, 1, 10);
+
+        for (int i = 0; i < numberOfFires; i++)
+        {
+            // Position random X between 0 and 250
+            int x = random.Next(-50, 50);
+
+            // Position random Y between 0 and 200
+            int y = random.Next(-50, 50);
+
+            int size = random.Next(80, 251);
+
+            _fireDamages.Add(new FireDamage(x, y, size, size));
+        }
+
+        StateHasChanged();
+    }
+}

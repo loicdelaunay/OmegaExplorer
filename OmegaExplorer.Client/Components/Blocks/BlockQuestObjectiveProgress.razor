@@ -1,0 +1,45 @@
+﻿<MudCard class="ma-2 pa-2">
+    <MudStack spacing="0">
+        <MudText Typo="Typo.caption">@GetObjectiveName() of faction @Objective.OwnerType | @Objective.Faction</MudText>
+
+        <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Row="true">
+            <MudText Typo="Typo.caption">@ComputeProgress()/@Objective.Amount</MudText>
+            <MudProgressLinear Color="Color.Primary" Value="@ComputeProgress()" Max="Objective.Amount"></MudProgressLinear>
+        </MudStack>
+    </MudStack>
+</MudCard>
+
+@code {
+
+    [Parameter]
+    public QuestObjective Objective { get; set; }
+
+    [Parameter]
+    public ResponseQuestObjectiveProgress? Progress { get; set; }
+
+    private int ComputeProgress()
+    {
+        int progress = 0;
+
+        if (Progress != null)
+        {
+            return Progress.Amount;
+        }
+
+        return progress;
+    }
+
+    private string GetObjectiveName()
+    {
+        switch (Objective.Type)
+        {
+            case EnumQuestObjectiveType.AttackSpaceship:
+                return $"Destroy {Objective.Amount} Spaceships";
+            case EnumQuestObjectiveType.AttackStarSystem:
+                return $"Attack {Objective.Amount} Star Systems";
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+
+}

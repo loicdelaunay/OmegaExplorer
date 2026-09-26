@@ -1,0 +1,29 @@
+﻿@using Position = MudBlazor.Position
+
+<MudCard>
+    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6" MaxHeight="400"
+             Style="min-height: 400px">
+        <MudTabPanel Text="History">
+            <MudTabs Outlined="true" Position="Position.Left" Rounded="true" Border="true" MaxHeight="400"
+                     ApplyEffectsToContainer="true" Class="mt-8" PanelClass="pa-6" KeepPanelsAlive="false">
+
+                @for (int i = Battle.CurrentCycle; i > 0; i--)
+                {
+                    int cycle = i;
+                    string cycleName = $"Cycle {cycle}";
+
+                    <MudTabPanel Text="@cycleName">
+                        <BlockBattleTurnHistory Cycle="@cycle" BattleId="Battle.Id"></BlockBattleTurnHistory>
+                    </MudTabPanel>
+                }
+
+            </MudTabs>
+        </MudTabPanel>
+    </MudTabs>
+</MudCard>
+
+
+@code {
+    [Parameter]
+    public ResponseBattle Battle { get; set; }
+}

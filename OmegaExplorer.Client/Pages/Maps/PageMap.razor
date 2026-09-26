@@ -1,0 +1,60 @@
+﻿@page "/map"
+@using Serilog
+@inject NavigationManager NavigationManager
+
+<CheckConnection></CheckConnection>
+<Header title="Map" Subtitle="Navigate through the space !"></Header>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NavigateUniversePhysic">Navigate through Physic universe</MudButton>
+<MudButton Variant="Variant.Filled" Color="Color.Warning" Disabled="true">Navigate through Phasic universe</MudButton>
+
+@code {
+    private ResponseUniverse? _universePhysic;
+    private ResponseUniverse? _universePhasic;
+    
+    
+    protected override async Task OnInitializedAsync()
+    {
+        //for now redirect to first universe automatically 
+        List<ResponseUniverse>? universes = await ApiManager.Client.GetAllUniverseAsync();
+
+        _universePhysic = universes.FirstOrDefault(universe => universe.Type == EnumUniverseType.Physic);
+        _universePhasic = universes.FirstOrDefault(universe => universe.Type == EnumUniverseType.Phasic);
+
+        if (_universePhysic == null)
+        {
+            Log.Logger.Error("[PageMap] : No physic universe found, cannot navigate to map");
+            return;
+        }
+        
+        // Redirect to physic universe by default
+        NavigationManager.NavigateTo("/map/universe/" + _universePhysic.Id);
+        
+        await base.OnInitializedAsync();
+    }
+
+    private void NavigateUniversePhysic()
+    {
+        if (_universePhysic == null)
+        {
+            return;
+        }
+        
+        NavigateUniverse(_universePhysic.Id);
+    }
+
+    private void NavigateUniversePhasic()
+    {
+        if (_universePhasic == null)
+        {
+            return;
+        }
+        
+        NavigateUniverse(_universePhasic.Id);
+    }
+    
+    private void NavigateUniverse(Guid id)
+    {
+        NavigationManager.NavigateTo("/map/universe/" + id);
+    }
+}

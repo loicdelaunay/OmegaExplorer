@@ -1,0 +1,26 @@
+﻿<MudPaper Outlined="true" Style="background-color: var(--mud-palette-background-grey)"
+          Class="cursor-pointer hoverable-animation">
+    <MudStack Spacing="1" AlignItems="AlignItems.Center" Justify="Justify.Center" Row="true">
+        <MudText Class="ml-1" Style="margin-top: 2px" Typo="Typo.caption">
+            <b>@Value</b> 
+            @if (MaxValue != null)
+            {
+                <b>/@MaxValue</b>
+            }
+        </MudText>
+        <MudImage Height="20" Src="@Icon"></MudImage>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public int? Value { get; set; }
+    
+    [Parameter]
+    public string Icon { get; set; }
+    
+    [Parameter]
+    public int? MaxValue { get; set; }
+    
+    
+}

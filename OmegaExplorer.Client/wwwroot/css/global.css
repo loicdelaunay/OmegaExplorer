@@ -1,0 +1,186 @@
+:root {
+    --mud-default-borderradius: 10px !important;
+}
+
+#blazor-error-ui {
+    width: 100px !important;
+    position: fixed !important;
+    bottom: 0px !important;
+    right: 0px !important;
+    left: unset !important;
+    height: 35px !important;
+}
+
+.color-version {
+    color: var(--mud-palette-tertiary);
+}
+
+.w-100 {
+    width: 100% !important;
+}
+
+.main-form-card {
+    min-width: 400px !important;
+}
+
+.second-form-card{
+    min-width: 300px !important;
+    background-color: var(--mud-palette-background-gray) !important;
+}
+
+.background-lottie {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw; /* Always cover viewport width */
+    height: 100vh; /* Always cover viewport height */
+    z-index: -1;
+    object-fit: cover;
+    scroll-behavior: unset;
+    pointer-events: none; /* Let clicks pass through */
+    background: transparent;
+}
+
+.show-on-hover-container > .show-on-hover {
+    height: 0px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 500ms;
+}
+
+.show-on-hover-container:hover > .show-on-hover {
+    height: revert;
+    opacity: 1;
+    visibility: visible;
+    transition: all 500ms;
+}
+
+#unity-container {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 16 / 9;
+}
+
+#unity-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.mud-icon-button {
+    box-shadow: #3b8bd0 !important;
+}
+
+.mud-dialog {
+    outline: var(--mud-palette-primary);
+    outline-style: solid;
+    outline-width: 0.2em;
+}
+
+.mud-dialog-info {
+    outline: var(--mud-palette-primary-text) !important;
+    outline-style: solid !important;
+    outline-width: 0.2em !important;
+}
+
+.mud-dialog-warning {
+    outline: var(--mud-palette-warning) !important;
+    outline-style: solid !important;
+    outline-width: 0.2em !important;
+}
+
+.mud-dialog-error {
+    outline: var(--mud-palette-error) !important;
+    outline-style: solid !important;
+    outline-width: 0.2em !important;
+}
+
+.backdrop-blur {
+    backdrop-filter: blur(10px) !important;
+}
+
+.outlined {
+    outline: var(--mud-palette-tertiary);
+    outline-style: solid;
+    outline-width: 0.2em;
+}
+
+.outlined-primary {
+    outline: var(--mud-palette-primary);
+    outline-style: solid;
+    outline-width: 0.2em;
+}
+
+.mud-appbar-resource {
+    margin-left: calc(var(--mud-drawer-width-left) + 20px) !important;
+    width: calc(100% - var(--mud-drawer-width-left) - 40px) !important;
+    position: sticky;
+    z-index: 10 !important;
+    top: 50px !important;
+    height: 30px;
+    border-top: 0 !important;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+}
+
+@media (max-width: 600px) {
+    .mud-appbar-resource {
+        top: 42px !important;
+    }
+}
+
+@media (max-width: 700px) {
+    .mud-appbar-resource {
+        margin-left: 20px !important;
+        margin-right: 20px !important;
+        width: calc(100% - 40px) !important;
+    }
+}
+
+:root {
+    --mud-appbar-height: 50px !important;
+}
+
+.footer {
+    position: fixed;
+    bottom: 10px;
+}
+
+.footer-nav-deployed {
+    left: 10px;
+}
+
+.modifier-positive {
+    background-color: var(--mud-palette-success) !important;
+}
+
+.modifier-negative{
+    background-color: var(--mud-palette-error) !important;
+}
+
+.background-color-dark {
+    background-color: var(--mud-palette-black)
+}
+
+.divider-title{
+    color: var(--mud-palette-primary-text);
+}
+
+.animate-in-element {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ignore-interaction {
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}

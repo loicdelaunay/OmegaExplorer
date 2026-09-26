@@ -1,0 +1,125 @@
+﻿@using Origin = MudBlazor.Origin
+<MudTooltip RootStyle="@RootStyle" Color="@GetColor()" Text="@GetLabel()">
+    <MudBadge Color="ColorBadge" Origin="Origin.BottomRight" Content="@Count" Bordered="true" Overlap="true" Visible="@(Count != null)">
+        <MudIconButton Size="Size" Class="mud-icon-button" Disabled="Disabled" Variant="@GetVariant()" Style="z-index: 10" HtmlTag="@HtmlTag" for="@For" Color="@GetColor()" Icon="@Icon" aria-label="@Description" OnClick="CallOnClick"></MudIconButton>
+    </MudBadge>
+</MudTooltip>
+
+@code {
+
+    [Parameter]
+    public string Label { get; set; }
+
+    [Parameter]
+    public Size Size { get; set; } = Size.Medium;
+
+    [Parameter]
+    public string RootStyle { get; set; } = string.Empty;
+
+    [Parameter]
+    public Variant Variant { get; set; } = Variant.Outlined;
+
+    [Parameter] public Variant VariantToggle { get; set; } = Variant.Filled;
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    [Parameter]
+    public string Description { get; set; }
+
+    [Parameter]
+    public string Icon { get; set; }
+
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    [Parameter]
+    public Color Color { get; set; } = Color.Default;
+
+    [Parameter] public Color ColorBadge { get; set; } = Color.Primary;
+
+    [Parameter] public Color ColorToggle { get; set; } = Color.Primary;
+
+    [Parameter]
+    public string For { get; set; }
+
+    [Parameter] public int? Count { get; set; }
+
+    [Parameter]
+    public string HtmlTag { get; set; }
+
+    [Parameter]
+    public bool IsUploadButton { get; set; }
+
+    [Parameter] public bool ToggleMode { get; set; } = false;
+
+    private bool _showLabel;
+    private bool _toggle;
+
+    private string GenerateClass()
+    {
+        int top = -3;
+        if (IsUploadButton)
+        {
+            top = -7;
+        }
+
+        string res = $"top: {top}px; position: relative; width: 150px; height: 20px; text-align: center";
+
+        return res;
+    }
+
+    private Color GetColor()
+    {
+        if (!ToggleMode)
+        {
+            return Color;
+        }
+
+        if (!_toggle)
+        {
+            return Color;
+        }
+        else
+        {
+            return ColorToggle;
+        }
+    }
+
+    private Variant GetVariant()
+    {
+        if (!ToggleMode)
+        {
+            return Variant;
+        }
+
+        if (!_toggle)
+        {
+            return Variant;
+        }
+        else
+        {
+            return VariantToggle;
+        }
+    }
+
+    private void CallOnClick()
+    {
+        _toggle = !_toggle;
+        OnClick.InvokeAsync();
+        StateHasChanged();
+    }
+
+    private string GetLabel()
+    {
+        string res = Label;
+
+        if (Count != null)
+        {
+            res += $" ({Count})";
+        }
+
+        return res;
+    }
+
+}

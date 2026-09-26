@@ -1,0 +1,67 @@
+﻿@using OmegaExplorer.Client.Utilities.Resources
+<MudDialog Class="@GetClass()">
+    <DialogContent>
+        <Header Dialog="true" Size="Size.Small" Title="@Title" Subtitle="Confirm action" Icon="@ResourceIcon.DELETE" OnClose="Cancel"></Header>
+        <MudText>@ContentText</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="@Color" Variant="Variant.Filled" OnClick="Submit">@ButtonText</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public string Title { get; set; } = "Confirmation";
+
+    [Parameter]
+    public string ContentText { get; set; }
+
+    [Parameter]
+    public string ButtonText { get; set; }
+
+    [Parameter]
+    public EnumType Type { get; set; } = EnumType.Information;
+
+    [Parameter]
+    public Color Color { get; set; }
+
+    public enum EnumType
+    {
+        Information,
+        Accent,
+        Success,
+        Warning,
+        Error
+    }
+
+    string GetClass()
+    {
+        return Type switch
+        {
+            EnumType.Information => "mud-dialog-info",
+            EnumType.Accent =>
+                //Default one
+                "",
+            EnumType.Success => "mud-dialog-success",
+            EnumType.Warning => "mud-dialog-warning",
+            EnumType.Error => "mud-dialog-error",
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
+
+    void Submit()
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+}

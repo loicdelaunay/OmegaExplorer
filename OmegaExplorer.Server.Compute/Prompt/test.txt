@@ -1,0 +1,14 @@
+﻿[INST] <<SYS>>
+You are a story generator. Return JSON with this structure:
+{{
+    ""story"": ""string"",
+    ""choices"": [
+        {{
+            ""text"": ""string"",
+            ""gold_change"": number
+        }}
+    ]
+}}
+<</SYS>>
+
+Generate a fantasy story with 4 choices. Start response with {{ [/INST]

@@ -1,0 +1,88 @@
+﻿@typeparam TItem  where TItem : OmegaExplorer.Client.Models.Card.CardDefinition
+
+@using OmegaExplorer.Shared.Filters
+@using OmegaExplorer.Client.Utilities.Enums
+@typeparam TResult
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <Header Dialog="true" title="@GetTitle()" Subtitle="@GetSubtitle()" Size="Size.Small"
+                OnClose="Close"></Header>
+
+        <DynamicCardStack Filter="Filter" RedirectIfEmpty="@RedirectIfEmpty" OnCardClicked="OnClicked" Mode="EnumCardMode.Picker" TCardDefinition="TItem"></DynamicCardStack>
+    </DialogContent>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public string Title { get; set; } = "Picker";
+
+    [Parameter]
+    public string? Subtitle { get; set; } = null;
+
+    [Parameter]
+    public string? RedirectIfEmpty { get; set; } = null;
+
+    [Parameter]
+    public bool IgnoreValue { get; set; } = false;
+
+    [Parameter]
+    public DynamicDriverFilter? Filter { get; set; }
+
+    private string GetTitle()
+    {
+        return Title;
+    }
+
+    private string GetSubtitle()
+    {
+        if (Subtitle == null)
+        {
+            return "Select element of type " + typeof(TResult).Name;
+        }
+
+        return Subtitle;
+    }
+
+    private void Close()
+    {
+        MudDialog.Close();
+    }
+
+    private void OnClicked(Card card)
+    {
+        if (card.Definition == null)
+        {
+            Snackbar.Add("Card picked definition is null", Severity.Warning);
+            return;
+        }
+
+        if(IgnoreValue)
+        {
+            MudDialog.Close();
+            return;
+        }
+
+        if (card.Definition.Value == null)
+        {
+            Snackbar.Add("Card picked definition value is null", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            TResult? item = (TResult) card.Definition.Value;
+            MudDialog.Close(item);
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add($"Error while casting card picked definition value : {e}", Severity.Error);
+        }
+    }
+
+}

@@ -1,0 +1,11 @@
+.text-editor {
+    height: 500px !important;
+}
+
+.monaco-editor {
+    height: 500px !important;
+}
+
+.monaco-editor-container {
+    height: 500px !important;
+}

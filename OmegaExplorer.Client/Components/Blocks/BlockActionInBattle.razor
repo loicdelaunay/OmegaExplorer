@@ -1,0 +1,157 @@
+﻿@using OmegaExplorer.Client.Utilities.Resources
+@using Serilog
+
+@inject ISnackbar Snackbar
+
+<MudCard Class="pa-2" Outlined="true">
+    <MudStack AlignItems="AlignItems.Center" Row="true" Spacing="5">
+        @if (ShowTurn)
+        {
+            <MudCard Outlined="true" Class="pa-2">
+                <MudText>Turn : @ResponseActionInBattle.Turn</MudText>
+            </MudCard>
+        }
+
+        <PreviewSpaceship IsFluid="true" Width="100" Spaceship="ResponseActionInBattle.Actor"></PreviewSpaceship>
+
+        <MudStack>
+            <BlockSkill Skill="@ResponseActionInBattle.SpaceshipSkillData"></BlockSkill>
+        </MudStack>
+
+        @* DICES ATTACK *@
+        @if (ResponseActionInBattle.Result != null)
+        {
+            <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center">
+                <BlockDice Value="@ResponseActionInBattle.Result.DiceActor"></BlockDice>
+                <MudText>Attacker</MudText>
+            </MudStack>
+        }
+
+        @* DICES DEFENSE *@
+        @if (ResponseActionInBattle.Result != null)
+        {
+            <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center">
+                <BlockDice Value="@ResponseActionInBattle.Result.DiceTarget"></BlockDice>
+                <MudText>Defender</MudText>
+            </MudStack>
+        }
+
+        @if (ResponseActionInBattle.Result != null)
+        {
+            <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height: 100% !important;">
+                @if (ResponseActionInBattle.Result.Dodge)
+                {
+                    <BlockIcon Color="Color.Error" Icon="@ResourceIcon.HIT">
+                        <MudText>Missed</MudText>
+                    </BlockIcon>
+                }
+
+                else if (ResponseActionInBattle.Result.Bounce)
+                {
+                    <BlockIcon Color="Color.Error" Icon="@ResourceIcon.BOUNCE">
+                        <MudText>Bounced</MudText>
+                    </BlockIcon>
+                }
+
+                else if (ResponseActionInBattle.Result.Absorb)
+                {
+                    <BlockIcon Color="Color.Error" Icon="@ResourceIcon.SHIELD">
+                        <MudText>Absorbed</MudText>
+                    </BlockIcon>
+                }
+
+                @if(ResponseActionInBattle.Result.Critical && !ResponseActionInBattle.Result.Dodge)
+                {
+                    <BlockIcon Color="Color.Success"
+                               Icon="@ResourceIcon.CRITICAL">
+                        <MudText>Critical hit !</MudText>
+                    </BlockIcon>
+                }
+            </MudStack>
+
+            <MudStack AlignItems="AlignItems.Start" Justify="Justify.Center">
+                @foreach(ResponseSpaceshipModule ModuleHit in ModulesHit)
+                {
+                    <MudText>@ResponseActionInBattle.Result.Value damage to : @ModuleHit.Name</MudText>
+                }
+            </MudStack>
+
+            <PreviewSpaceship IsFluid="true" Width="100" Spaceship="ResponseActionInBattle.Targets.FirstOrDefault()"></PreviewSpaceship>
+        }
+
+        @if (!IsReadOnly)
+        {
+            <MudButton OnClick="OnDeleteAction">Cancel</MudButton>
+        }
+
+        @if (MainLayout.UserSettings.IsDev)
+        {
+            <MudStack AlignItems="AlignItems.End">
+                <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="@(() => Debug())">Debug</MudButton>
+            </MudStack>
+        }
+    </MudStack>
+</MudCard>
+
+@code {
+    [Parameter]
+    public ResponseActionInBattle ResponseActionInBattle { get; set; }
+
+    [Parameter]
+    public bool IsReadOnly { get; set; } = true;
+
+    [Parameter]
+    public Guid BattleId { get; set; }
+
+    [Parameter]
+    public EventCallback<BlockActionInBattle> OnDeleted { get; set; }
+
+    [Parameter]
+    public bool ShowTurn { get; set; } = true;
+
+    private List<ResponseSpaceshipModule> ModulesHit { get; set; }
+
+    private string _exceptionMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if(ResponseActionInBattle.Result != null)
+        {
+            try
+            {
+                ResponseSpaceship? spaceship = ResponseActionInBattle.Targets.FirstOrDefault();
+                Log.Logger.Debug("Spaceship : {Spaceship}", spaceship);
+
+                ModulesHit = spaceship.Modules.Where(module => ResponseActionInBattle.Result.ModuleIds.Contains(module.Id)).ToList();
+            }
+            catch (Exception e)
+            {
+                _exceptionMessage = e.Message;
+                Log.Logger.Error(e, "Error when loading block action");
+                Snackbar.Add($"Error when loading block action : {_exceptionMessage}", Severity.Error);
+            }
+        }
+
+        await base.OnInitializedAsync();
+    }
+
+    private async Task OnDeleteAction(MouseEventArgs obj)
+    {
+        try
+        {
+            await ApiManager.Client.DeleteActionInBattleAsync(BattleId, ResponseActionInBattle.Id);
+            MainLayout.Instance.ImplSnackbar.Add("Action deleted", Severity.Success);
+            OnDeleted.InvokeAsync(this);
+        }
+        catch (Exception e)
+        {
+            MainLayout.Instance.ImplSnackbar.Add($"Error: {e.Message}", Severity.Error);
+            Log.Logger.Error(e, "Error when deleting action");
+        }
+    }
+
+    private async Task  Debug()
+    {
+        MainLayout.Instance.DialogTemplates.OpenDialogDebug(this);
+    }
+}

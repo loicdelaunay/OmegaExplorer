@@ -1,0 +1,120 @@
+﻿@inject ISnackbar Snackbar
+
+@using OmegaExplorer.Client.Components.Diagram.Nodes.Models
+@using Serilog
+
+@using OmegaExplorer.Client.Utilities.Resources
+
+<MudPaper Outlined="true" Class="@GetClass()" Style="overflow: hidden" MaxWidth="300px">
+        <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Row="true">
+            @if (Node.Technology.Knowledge == EnumDataKnowledge.Locked)
+            {
+                <MudIcon Icon="@ResourceIcon.LOCKED"></MudIcon>
+            }
+            else
+            {
+                <MudStack Style="min-width: 50px !important;" Class="@GetClassContainer()" AlignItems="AlignItems.Center"
+                          Justify="Justify.Center" Row="true">
+
+                    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center">
+                        <BlockTechnologyCube Image="@GetImage()"></BlockTechnologyCube>
+
+                        <MudPaper Class="pa-2" Outlined="true">
+                            @if (Node.IsResearched)
+                            {
+                                <MudButton OnClick="StopResearch" Color="Color.Error">Stop</MudButton>
+                            }
+                            else if (Node.Technology.Knowledge == EnumDataKnowledge.Unlocked)
+                            {
+                                <MudButton Color="Color.Primary" Variant="Variant.Outlined" OnClick="OnResearch">
+                                    Research
+                                </MudButton>
+                            }
+                            else if (Node.Technology.Knowledge == EnumDataKnowledge.Researched)
+                            {
+                                <MudText Color="Color.Success">Researched !</MudText>
+                            }
+                        </MudPaper>
+                    </MudStack>
+
+                    <MudStack Class="node-description" Spacing="1">
+
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center">
+                            <MudText Typo="Typo.body2">@Node.Technology.Name</MudText>
+                            <ChipRarity Style="width: 80px" Rarity="Node.Technology.Rarity"></ChipRarity>
+                        </MudStack>
+
+                        <MudPaper Class="pa-2 background-color-dark" Outlined="true">
+                            <MudText Style="max-height: 100px; overflow: scroll"
+                                     Typo="Typo.caption">@Node.Technology.Description</MudText>
+                        </MudPaper>
+                    </MudStack>
+                </MudStack>
+            }
+
+            @if (MainLayout.UserSettings.IsDev)
+            {
+                <MudIconButtonWithLabel Color="Color.Warning" Icon="@ResourceIcon.DEBUG"
+                                        OnClick="OnDebug"></MudIconButtonWithLabel>
+            }
+        </MudStack>
+</MudPaper>
+
+@code {
+
+    [Parameter]
+    public NodeModelTechnology Node { get; set; } = null!;
+
+    private string GetImage()
+    {
+        string res = ResourceImage.GetImageTechnology(index: Node.Technology.Index);
+
+        return res;
+    }
+
+    private async Task OnDebug()
+    {
+        await MainLayout.Instance.DialogTemplates.OpenDialogDebug(Node.Technology);
+    }
+
+    private async Task OnResearch()
+    {
+        try
+        {
+            await ApiManager.Client.StartSearchTechnologyAsync(Node.Technology.Index);
+            await MainLayout.Instance.CallUpdateTechnologySearch();
+            Snackbar.Add($"Technology research starting for {Node.Technology.Name}", Severity.Success);
+        }
+        catch (Exception e)
+        {
+            Log.Logger.Error(e, "Error while research");
+            Snackbar.Add($"Error starting research for {Node.Technology.Name} {e.Message}", Severity.Error);
+        }
+    }
+
+    private string GetClassContainer()
+    {
+        string res = "node-container";
+
+        return res;
+    }
+
+    private string GetClass()
+    {
+        string res = "pa-2 hoverable-animation node";
+
+        if (Node.IsResearched)
+        {
+            res += $" node-selected";
+        }
+
+        return res;
+    }
+
+    private async Task StopResearch()
+    {
+        await ApiManager.Client.StopSearchTechnologyAsync();
+        await MainLayout.Instance.CallUpdateTechnologySearch();
+    }
+
+}

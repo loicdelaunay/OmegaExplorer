@@ -1,0 +1,16 @@
+﻿<MudPaper Outlined="true" Class="pa-2 ma-2">
+    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="0">
+        <MudText>=></MudText>
+        <MudText Typo="Typo.caption">@Distance A.L</MudText>
+        <MudText Typo="Typo.caption">@Delay Cycles</MudText>
+    </MudStack>
+</MudPaper>
+
+@code {
+
+    [Parameter]
+    public int Distance { get; set; }
+
+    [Parameter]
+    public int Delay { get; set; }
+}

@@ -1,0 +1,32 @@
+﻿@if (Rarity != null)
+{
+    @switch (Rarity)
+    {
+        case EnumRarity.Common:
+            <MudChip T="string" Class="color-background-common" Style="@Style" Size="Size.Small" Color="Color.Info">Common</MudChip>
+            break;
+        case EnumRarity.Uncommon:
+            <MudChip T="string" Class="color-background-uncommon" Style="@Style" Size="Size.Small" Color="Color.Success">Uncommon</MudChip>
+            break;
+        case EnumRarity.Rare:
+            <MudChip T="string" Class="color-background-rare" Style="@Style" Size="Size.Small" Color="Color.Primary">Rare</MudChip>
+            break;
+        case EnumRarity.Epic:
+            <MudChip T="string" Class="color-background-epic" Style="@Style" Size="Size.Small" Color="Color.Secondary">Epic</MudChip>
+            break;
+        case EnumRarity.Legendary:
+            <MudChip T="string" Class="color-background-legendary" Style="@Style" Size="Size.Small" Color="Color.Warning">Legendary</MudChip>
+            break;
+        case EnumRarity.Origin:
+            <MudChip T="string" Class="color-background-origin" Style="@Style" Size="Size.Small" Color="Color.Error">Origin</MudChip>
+            break;
+        default:
+            throw new ArgumentOutOfRangeException();
+    }
+}
+
+@code {
+    [Parameter] public EnumRarity? Rarity { get; set; }
+
+    [Parameter] public string Style { get; set; }
+}

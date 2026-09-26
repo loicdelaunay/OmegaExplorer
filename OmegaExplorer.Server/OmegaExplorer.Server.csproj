@@ -1,0 +1,157 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AutoMapper" Version="14.0.0" />
+        <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+        <PackageReference Include="Bogus" Version="35.6.1" />
+        <PackageReference Include="EntityFrameworkCore.Exceptions.Common" Version="8.1.3" />
+        <PackageReference Include="EntityFrameworkCore.Exceptions.MySQL" Version="8.1.3" />
+        <PackageReference Include="EntityFrameworkCore.Exceptions.PostgreSQL" Version="8.1.3" />
+        <PackageReference Include="EntityFrameworkCore.Exceptions.Sqlite" Version="8.1.3" />
+        <PackageReference Include="Google.Apis.Auth" Version="1.70.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.3" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.3" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.3">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.3" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.3">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+        <PackageReference Include="OpenTelemetry.Api" Version="1.12.0" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.12.0-beta.1" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0" />
+        <PackageReference Include="Serilog" Version="4.3.0" />
+        <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+        <PackageReference Include="Serilog.Enrichers.Context" Version="4.6.5" />
+        <PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+        <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+        <PackageReference Include="Serilog.Sinks.OpenTelemetry" Version="4.2.0" />
+        <PackageReference Include="Serilog.Sinks.SQLite" Version="6.0.0" />
+        <PackageReference Include="SignalRSwaggerGen" Version="4.8.0" />
+        <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.4" />
+        <PackageReference Include="Swashbuckle.AspNetCore.ReDoc" Version="8.1.4" />
+        <PackageReference Include="xunit.assert" Version="2.5.3" />
+    </ItemGroup>
+
+
+
+    <ItemGroup>
+      <Content Include="..\_Tools\nswag-converter\launchNSwag.bat">
+        <Link>launchNSwag.bat</Link>
+      </Content>
+      <Content Update="Views\Resources\Img\logo.png">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Update="Views\Resources\favicon.ico">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Static\Spaceship\Thumbnail\323bdd4d19918b557f32602b5564d6bfcb50920c20199877c97d775c2c8f6198.png" />
+      <Content Include="Static\Spaceship\Thumbnail\4cfd88692ad4f170737923d6f27403628038849eebb33b4b38a2e131221f5cf1.png" />
+      <Content Include="Static\Spaceship\Thumbnail\7cc1f431d065bf0111804dd6f8eea330c18e4709367e440ef9e2357735187e79.png" />
+      <Content Include="Static\Spaceship\Thumbnail\bfaed29e3b530efebc7cb73d065f9cd0916047549542dd58d504845b7a7f4143.png" />
+      <Content Include="Static\Spaceship\Thumbnail\bff2e25fb55074cadbfb3fc59ecc5e2e336ced267354b5d11aef4408412df8ad.png" />
+      <Content Include="Static\Spaceship\Thumbnail\d3a66e94865ca7180cf0013cba3c0b70a0bfadf2e7a301918872b901495afe0d.png" />
+      <Content Include="Static\Spaceship\Thumbnail\e90b4f9319f895a08810e325f95e380ba18be0f4504398c65cf745e8b31400c1.png" />
+      <Content Include="Static\Spaceship\Thumbnail\f83217cf8aea37b72b8b318bfe61f2a675c82157944cefee7bf7134011720712.png" />
+      <Content Remove="Static\Spaceship\Thumbnail\**" />
+      <Content Remove="logs\**" />
+    </ItemGroup>
+    <ItemGroup>
+        <Folder Include="Services\Jsons\" />
+        <Folder Include="Migrations\" />
+        <Folder Include="Services\_Game\Orders\Models\Classes\" />
+        <Folder Include="Services\_Game\Technologies\Models\Contracts\" />
+        <Folder Include="wwwroot\Spaceship\" />
+    </ItemGroup>
+    <ItemGroup>
+      <None Remove="Database.db-shm" />
+      <None Remove="Database.db-wal" />
+      <Content Remove="config.json" />
+      <None Include="config.json">
+        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      </None>
+      <None Remove="Static\Spaceship\Thumbnail\**" />
+      <None Include="wwwroot\Resources\favicon.ico" />
+      <None Include="wwwroot\Resources\Img\logo.png" />
+      <None Remove="logs\**" />
+    </ItemGroup>
+    <ItemGroup>
+        <_ContentIncludedByDefault Remove="Models\Dynamic\Building\administration.json" />
+        <_ContentIncludedByDefault Remove="Models\Dynamic\Building\Central1.json" />
+        <_ContentIncludedByDefault Remove="Models\Dynamic\Building\Central2.json" />
+        <_ContentIncludedByDefault Remove="Models\Dynamic\Building\Mine1.json" />
+        <_ContentIncludedByDefault Remove="Models\Dynamic\Building\shipyard1.json" />
+        <_ContentIncludedByDefault Remove="Models\Dynamic\Building\shipyard2.json" />
+        <_ContentIncludedByDefault Remove="Models\Dynamic\Building\shipyard3.json" />
+        <_ContentIncludedByDefault Remove="Models\Dynamic\Resources\Credit.json" />
+        <_ContentIncludedByDefault Remove="Models\Dynamic\Resources\crystal.json" />
+        <_ContentIncludedByDefault Remove="Managers\Game\Instability\_content\naming.json" />
+        <_ContentIncludedByDefault Remove="Managers\Game\Planet\_content\naming.json" />
+        <_ContentIncludedByDefault Remove="Managers\Game\Spaceship\_content\naming.json" />
+        <_ContentIncludedByDefault Remove="Dynamic\Building\002_Central\000201.central-nuclear.building.json" />
+        <_ContentIncludedByDefault Remove="Dynamic\Building\002_Central\002000.central-coal.building.json" />
+        <_ContentIncludedByDefault Remove="Dynamic\Building\003_Mine\003000.mine-primitive.building.json" />
+        <_ContentIncludedByDefault Remove="Dynamic\Building\003_Mine\003100.mine-mechanical.building.json" />
+        <_ContentIncludedByDefault Remove="Dynamic\Building\003_Mine\003110.mine-over-exploited.building.json" />
+        <_ContentIncludedByDefault Remove="Dynamic\Building\003_Mine\003200.mine-automated.building.json" />
+        <_ContentIncludedByDefault Remove="Dynamic\Building\003_Mine\003300.mine-robotic.building.json" />
+        <_ContentIncludedByDefault Remove="Dynamic\Building\003_Mine\003400.mine-ai.building.json" />
+        <_ContentIncludedByDefault Remove="Dynamic\Building\003_Mine\003410.mine-bio-tech.building.json" />
+        <_ContentIncludedByDefault Remove="Dynamic\Building\003_Mine\003500.mine-core.building.json" />
+        <_ContentIncludedByDefault Remove="Dynamic\Building\004_Shipyard\004000.shipyard-small.building.json" />
+        <_ContentIncludedByDefault Remove="Dynamic\Building\004_Shipyard\004100.shipyard-advanced.building.json" />
+        <_ContentIncludedByDefault Remove="Dynamic\Building\004_Shipyard\004200.shipyard-large.building.json" />
+        <_ContentIncludedByDefault Remove="Game\Building\Building\004_Shipyard\004000.shipyard-small.building.json" />
+        <_ContentIncludedByDefault Remove="Game\Building\Building\004_Shipyard\004100.shipyard-advanced.building.json" />
+        <_ContentIncludedByDefault Remove="Game\Building\Building\004_Shipyard\004200.shipyard-large.building.json" />
+        <_ContentIncludedByDefault Remove="Dynamic\Celebrity\000001.dream.celebrity.json" />
+        <_ContentIncludedByDefault Remove="Dynamic\Brand\000002.stellar-corsair.brand.json" />
+        <_ContentIncludedByDefault Remove="Game\SpaceshipModule\_dynamic\Module\001_Cockpit\001000.cockpit-standard.spaceship-module.json" />
+        <_ContentIncludedByDefault Remove="Game\SpaceshipModule\_dynamic\Module\001_Cockpit\001001.cockpit-standard.spaceship-module.json" />
+        <_ContentIncludedByDefault Remove="Game\SpaceshipSkill\Skill\004_Shield\004000.shield.skill.json" />
+        <_ContentIncludedByDefault Remove="Game\Technology\Mine\1000.mine.tech.json" />
+        <_ContentIncludedByDefault Remove="Game\Technology\Mine\1100.mine.tech.json" />
+        <_ContentIncludedByDefault Remove="Game\Technology\Mine\1110.mine.tech.json" />
+        <_ContentIncludedByDefault Remove="Game\Technology\Mine\1200.mine.tech.json" />
+        <_ContentIncludedByDefault Remove="Game\Technology\Mine\1300.mine.tech.json" />
+        <_ContentIncludedByDefault Remove="Game\Technology\Mine\1400.minte.tech.json" />
+        <_ContentIncludedByDefault Remove="Game\Technology\Mine\1410.mine.tech.json" />
+        <_ContentIncludedByDefault Remove="Game\Technology\Mine\1500.mine.tech.json" />
+        <_ContentIncludedByDefault Remove="Game\Building\_dynamic\003_Mine\003500.mine-core.building.json" />
+        <_ContentIncludedByDefault Remove="Game\Building\_dynamic\004_Shipyard\004100.shipyard-advanced.building.json" />
+        <_ContentIncludedByDefault Remove="Game\Building\_dynamic\004_Shipyard\004200.shipyard-large.building.json" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\OmegaExplorer.Aspire.ServiceDefault\OmegaExplorer.Aspire.ServiceDefault.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+      <Compile Remove="Static\Spaceship\Thumbnail\**" />
+      <Compile Remove="logs\**" />
+    </ItemGroup>
+    <ItemGroup>
+      <EmbeddedResource Remove="Static\Spaceship\Thumbnail\**" />
+      <EmbeddedResource Remove="logs\**" />
+    </ItemGroup>
+    <Import Project="..\OmegaExplorer.Shared\OmegaExplorer.Shared.projitems" Label="Shared" />
+</Project>

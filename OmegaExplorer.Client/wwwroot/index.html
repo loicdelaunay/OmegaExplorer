@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html style="height: 100%" lang="en">
+
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+    <title>OmegaExplorer.App</title>
+    <base href="/"/>
+
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet"/>
+
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/preset-confetti@3/tsparticles.preset.confetti.bundle.min.js"></script>
+
+    <link href="css/global.css" rel="stylesheet"/>
+    <link href="css/card.css" rel="stylesheet"/>
+    <link href="css/utility.css" rel="stylesheet"/>
+    <link href="css/loading.css" rel="stylesheet"/>
+    <link href="css/decorative.css" rel="stylesheet"/>
+    <link href="css/assistant.css" rel="stylesheet"/>
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet"/>
+    <link href="_content/Z.Blazor.Diagrams/style.min.css" rel="stylesheet"/>
+    <link href="_content/Z.Blazor.Diagrams/default.styles.min.css" rel="stylesheet"/>
+    <link href="_content/CodeBeam.MudBlazor.Extensions/MudExtensions.min.css" rel="stylesheet"/>
+    <link href="css/diagram.css" rel="stylesheet"/>
+    <link href="css/text-editor.css" rel="stylesheet"/>
+    <link href="css/color.css" rel="stylesheet"/>
+    <link href="css/gain.css" rel="stylesheet"/>
+    <link href="css/nodes/node.css" rel="stylesheet"/>
+    <link href="css/nodes/technology.css" rel="stylesheet"/>
+    <link href="css/nodes/map-planet.css" rel="stylesheet"/>
+    <link href="css/nodes/module.css" rel="stylesheet"/>
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="/metadata/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+</head>
+
+<body style="height: 100%">
+<div id="app" style="height: 100%">
+    <div class="loading">
+        <div class="loading-popup">
+            <div>
+                <img class="loading-logo" src="/metadata/android-icon-192x192.png">
+            </div>
+            <div>
+                <h3> Loading OmegaExplorer... depending on your internet speed, it may take 2 or 3 minutes1
+                    for the first
+                    time.</h3>
+                <br>
+                <h5> After 10 minutes, you can try to press ctrl+f5 to clear cache et reload the page.</h5>
+                <br>
+                <h6> If it's not working please contact support</h6>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="blazor-error-ui">
+    <a class="reload" href="">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+<script src="_framework/blazor.webassembly.js"></script>
+<script src="_content/MudBlazor/MudBlazor.min.js"></script>
+<script src="js/include.js"></script>
+<script src="js/logging.js"></script>
+<script src="js/lottie-player.js"></script>
+<script src="js/particle.js"></script>
+<script src="_content/Z.Blazor.Diagrams/script.min.js"></script>
+<script src="_content/BlazorMonaco/jsInterop.js"></script>
+<script src="_content/BlazorMonaco/lib/monaco-editor/min/vs/loader.js"></script>
+<script src="_content/BlazorMonaco/lib/monaco-editor/min/vs/editor/editor.main.js"></script>
+<script src="_content/CodeBeam.MudBlazor.Extensions/MudExtensions.min.js"></script>
+<script src="_content/MudBlazor.Extensions/js/components/MudExAppLoader.min.js"></script>
+<script src="https://pixijs.download/release/pixi.js"></script>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="js/google.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.1.2/howler.core.min.js"
+        integrity="sha256-q2vnVvwrx3RbYXPyAwx7c2npmULQg2VdCXBoJ5+iigs=" crossorigin="anonymous"></script>
+<script src="_content/Howler.Blazor/JsInteropHowl.js"></script>
+
+</body>
+
+</html>

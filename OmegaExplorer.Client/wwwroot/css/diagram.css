@@ -1,0 +1,56 @@
+﻿.default-node{
+    background-color: var(--mud-palette-surface) !important;
+}
+
+.diagram-parent{
+    height: 100%;
+    display: flex;
+    align-items: stretch;
+}
+
+.diagram-container{
+    border-radius: 10px;
+    border: 1px solid var(--mud-palette-secondary); /* Just visual */
+    width: auto !important;
+    height: 65vh;
+}
+
+.hover-group {
+    position: relative;
+}
+
+.hover-element {
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    transform: scale(1);
+    opacity: 1;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.hover-active {
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    transform: scale(0);
+    opacity: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    visibility: hidden;
+}
+
+.hover-group:hover .hover-element {
+    transform: scale(0);
+    opacity: 0;
+    visibility: hidden;
+}
+
+.hover-group:hover .hover-active {
+    transform: scale(1);
+    opacity: 1;
+    visibility: visible;
+}
+
+.image-reverse {
+    transform: scaleX(-1);
+}

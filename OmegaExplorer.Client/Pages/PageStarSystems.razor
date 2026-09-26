@@ -1,0 +1,20 @@
+﻿@page "/star-systems"
+@using OmegaExplorer.Client.Models.Card.Definition
+@using OmegaExplorer.Client.Utilities.Extensions
+@inject ISnackbar Snackbar
+
+<Header Title="Systems management" Subtitle="Manage your systems"></Header>
+
+<CheckConnection></CheckConnection>
+
+<DynamicCardStack @ref="_dynamicCardStack" TCardDefinition="CardDefinitionStarSystem" OnCardDeleted="OnCardDeleted"></DynamicCardStack>
+
+@code {
+    private DynamicCardStack<CardDefinitionStarSystem> _dynamicCardStack;
+    
+    private void OnCardDeleted()
+    {
+        _dynamicCardStack.Get();
+    }
+
+}

@@ -1,0 +1,251 @@
+﻿@page "/technologies"
+
+@using Blazor.Diagrams.Core.Geometry
+@using Blazor.Diagrams.Core.Models
+@using OmegaExplorer.Client.Components.Diagram.Nodes
+@using OmegaExplorer.Client.Components.Diagram.Nodes.Models
+@using OmegaExplorer.Client.Providers.Hubs
+@using Serilog
+@using OmegaExplorer.Client.Utilities.Resources
+
+
+@inject CycleHubProvider CycleHubProvider
+
+@implements IDisposable
+
+<CheckConnection></CheckConnection>
+<Header Title="Technologies" Subtitle="Search new things"></Header>
+
+<MudButton OnClick="@DiagramUpdate">Update data</MudButton>
+<MudButton OnClick="@Refresh">Refresh</MudButton>
+<MudButton Color="Color.Warning" OnClick="@CallDebug">Debug</MudButton>
+
+@if (Diagram != null)
+{
+    <div class="diagram-container">
+        <CascadingValue Value="Diagram" IsFixed="true">
+            <DiagramCanvas>
+                <Widgets>
+                    <NavigatorWidget Width="200" Height="120"
+                                     Class="border border-black bg-white absolute"
+                                     Style="bottom: 15px; right: 15px;"/>
+                </Widgets>
+            </DiagramCanvas>
+        </CascadingValue>
+    </div>   
+}
+else
+{
+    <BlockLoading></BlockLoading>
+}
+
+
+@code {
+    private BlazorDiagram? Diagram { get; set; }
+    private List<IDynamicItemTechnology> _technologyDatas = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ApiAuth.AwaitConnection();
+
+        MainLayout.Instance.OnTechnologyResearchChanged += _technologyResearchChangedHandler;
+        CycleHubProvider.OnCycleStarted += _cycleChangedHandler;
+
+        await InitializeDiagram();
+
+        await base.OnInitializedAsync();
+    }
+
+
+    private async Task InitializeDiagram()
+    {
+        BlazorDiagramOptions options = new()
+        {
+            AllowMultiSelection = false,
+            Zoom =
+            {
+                Enabled = true,
+                Inverse = true,
+            },
+            Virtualization = {Enabled = true},
+            Links =
+            {
+                DefaultRouter = new NormalRouter(),
+                DefaultPathGenerator = new SmoothPathGenerator(),
+                DefaultColor = "rgb(0, 121, 107)"
+            },
+        };
+
+        Diagram = new BlazorDiagram(options);
+
+        if (Diagram == null)
+        {
+            Log.Logger.Error($"[{nameof(PageTechnologies)}] : diagram is null");
+        }
+
+        Diagram.RegisterComponent<NodeModelTechnology, NodeTechnology>();
+        Diagram.RegisterComponent<NodeModelTechnologyLabel, NodeTechnologyLabel>();
+
+        await Refresh();
+    }
+
+    private async void _cycleChangedHandler()
+    {
+        await Refresh();
+    }
+
+    private async void _technologyResearchChangedHandler()
+    {
+        await Refresh();
+    }
+
+
+    private async Task Refresh()
+    {
+        _technologyDatas = await ApiManager.Client.GetAllTechnologiesAsync();
+        await DiagramUpdate();
+
+        StateHasChanged();
+    }
+
+    private async Task DiagramUpdate()
+    {
+        try
+        {
+            if (Diagram == null)
+            {
+                Log.Logger.Error($"[{nameof(PageTechnologies)}] : diagram is null");
+                return;
+            }
+
+            Diagram.Nodes.Clear();
+
+            CreateLabels();
+
+            ResponseTechnologyKnowledge currentResearch = null;
+            try
+            {
+                currentResearch = await ApiManager.Client.GetCurrentTechnologyProgressAsync();
+            }
+            catch (SwaggerException swaggerException)
+            {
+                if (swaggerException.StatusCode == 204)
+                {
+                    Log.Logger.Warning($"[{nameof(PageTechnologies)}] : no technology research in progress");
+                }
+                else
+                {
+                    Log.Logger.Error(swaggerException, $"[{nameof(PageTechnologies)}] : error while getting current technology research");
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Logger.Error(e, $"[{nameof(PageTechnologies)}] : error while getting current technology research");
+            }
+
+            foreach (IDynamicItemTechnology technologyData in _technologyDatas)
+            {
+                CreateNode(technologyData, currentResearch);
+            }
+
+            Diagram.Refresh();
+            RegisterLinks();
+        }
+        catch (Exception e)
+        {
+            Log.Logger.Error($"Not able to update diagram: {e.Message}");
+            Log.Logger.Error(e, "Not able to update diagram");
+        }
+    }
+
+    private void CreateNode(IDynamicItemTechnology technologyData, ResponseTechnologyKnowledge? currentResearch)
+    {
+        bool isCurrent = currentResearch?.TechnologyIndex == technologyData.Index;
+
+        NodeModelTechnology nodeModel = new(technologyData)
+        {
+            Position = new Point(technologyData.X * 250, -technologyData.Y * 250),
+            Locked = true,
+            IsResearched = isCurrent,
+        };
+
+        NodeModelTechnology node = Diagram.Nodes.Add(nodeModel);
+    }
+
+    private void CreateLabels()
+    {
+        NodeModelTechnologyLabel nodeModel = new("Mines", "Technologies about all minings system", ResourceImage.GetImageTechnology(1000))
+        {
+            Position = new Point(-200, 250),
+            Size = new(200, 200),
+            Locked = true
+        };
+
+        NodeModelTechnologyLabel nodeModel2 = new("Planetary Administration", "Technologies about all minings system", ResourceImage.GetImageTechnology(1000))
+        {
+            Position = new Point(2200, 250),
+            Size = new(200, 200),
+            Locked = true
+        };
+
+        NodeModelTechnologyLabel nodeModel3 = new("Quest system", "Technologies about all minings system", ResourceImage.GetImageTechnology(1000))
+        {
+            Position = new Point(4800, 250),
+            Size = new(200, 200),
+            Locked = true
+        };
+
+        Diagram.Nodes.Add(nodeModel);
+        Diagram.Nodes.Add(nodeModel2);
+        Diagram.Nodes.Add(nodeModel3);
+    }
+
+    private void RegisterLinks()
+    {
+        List<NodeModelTechnology> nodes = Diagram.Nodes.OfType<NodeModelTechnology>().ToList();
+
+        Log.Logger.Information($"[{nameof(PageTechnologies)}] : registering links for {nodes.Count} nodes");
+
+        foreach (NodeModelTechnology node in nodes)
+        {
+            //Search node by index
+            if (node.Technology.RequiredTechnologies is {Count: > 0})
+            {
+                foreach (IDynamicItemTechnology? requiredTechnology in node.Technology.RequiredTechnologies)
+                {
+                    //Get node link to this technology
+                    NodeModel? requiredNode = Diagram.Nodes.FirstOrDefault(x => x is NodeModelTechnology nodeModelTechnology && nodeModelTechnology.Technology.Index == requiredTechnology.Index);
+
+                    if (requiredNode == null)
+                    {
+                        Log.Logger.Warning($"Not able to find required node for {requiredTechnology} at index {node.Technology.Index}, currently diagram have {Diagram.Nodes.Count} nodes with {Diagram.Links.Count} links");
+                        continue;
+                    }
+
+                    LinkModel link = new(requiredNode, node);
+
+                    Diagram.Links.Add(link);
+                }
+            }
+        }
+    }
+
+    private void CallDebug(MouseEventArgs obj)
+    {
+        MainLayout.Instance.DialogTemplates.OpenDialogDebug(_technologyDatas);
+    }
+
+    public void Dispose()
+    {
+        if (_technologyResearchChangedHandler != null)
+        {
+            MainLayout.Instance.OnTechnologyResearchChanged -= _technologyResearchChangedHandler;
+        }
+
+        if (_cycleChangedHandler != null)
+        {
+            CycleHubProvider.OnCycleStarted -= _cycleChangedHandler;
+        }
+    }
+
+}

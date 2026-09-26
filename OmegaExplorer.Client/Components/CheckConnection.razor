@@ -1,0 +1,177 @@
+﻿@inject NavigationManager NavigationManager
+@inject ILocalStorageService LocalStorage
+@inject ISnackbar Snackbar
+@using Blazored.LocalStorage
+@using OmegaExplorer.Client.Managers
+@using OmegaExplorer.Client.Pages
+@using OmegaExplorer.Client.Pages.Start
+@using OmegaExplorer.Client.Utilities.Enums
+
+@using OmegaExplorer.Client.Utilities.Extensions
+@using Serilog
+@using OmegaExplorer.Client.Utilities
+@implements IDisposable
+
+@code {
+
+    [Parameter]
+    public EnumUserAccessLevel? AccessLevel { get; set; } = EnumUserAccessLevel.Player;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // If the access level is not set, we don't need to check anything
+        if (AccessLevel == null)
+        {
+            await base.OnAfterRenderAsync(false);
+        }
+
+        if (firstRender)
+        {
+            await CheckAccess();
+        }
+
+        ApiAuth.OnDisconnected += () =>
+        {
+            RedirectToLogin("Disconnected, redirecting...");
+        };
+
+        await base.OnAfterRenderAsync(false);
+    }
+
+    private async Task CheckAccess()
+    {
+        try
+        {
+            Log.Information($"[{nameof(CheckConnection)}] : client waiting for connection...");
+            int maxLoop = 100;
+            while (ApiAuth.IsConnecting && maxLoop > 0)
+            {
+                await Task.Delay(100);
+                maxLoop--;
+            }
+
+            if (maxLoop <= 0)
+            {
+                RedirectToLogin("Not able to wait connecting process, redirecting...");
+                return;
+            }
+
+            if (ApiAuth.UserConnected == null)
+            {
+                //Try to reconnect
+                Log.Logger.Information($"[{nameof(CheckConnection)}] : try to reconnect");
+                bool reconnected = await TryToReconnect();
+
+                Log.Logger.Information($"[{nameof(CheckConnection)}] : reconnected ? : {reconnected}");
+
+                
+                if (!reconnected)
+                {
+                    RedirectToLogin("Not connected, redirecting...");
+                    return;
+                }
+            }
+            else
+            {
+                await CheckRequirements();
+            }
+
+            if (ApiAuth.UserConnected.AccessLevel < AccessLevel)
+            {
+                Log.Logger.Warning($"[{nameof(CheckConnection)}] : not enough access level, redirecting...");
+                RedirectToLogin("Not enough access level, redirecting...");
+                return;
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Logger.Error(e, $"[{nameof(CheckConnection)}] error when checking connection");
+            RedirectToLogin($"Exception : {e.Message}, redirecting...");
+        }
+
+        Log.Logger.Information($"[{nameof(CheckConnection)}] : client waiting done");
+        ApiAuth.IsClientWaiting = false;
+        await base.OnInitializedAsync();
+    }
+
+    private async Task<bool> TryToReconnect()
+    {
+        try
+        {
+            ApiAuth.IsClientConnecting = true;
+            UserSettings? userSettings = await UserSettingsManager.GetUserSettings();
+
+            if (userSettings == null)
+            {
+                return false;
+            }
+
+            var token = userSettings.Token;
+
+            if (string.IsNullOrEmpty(token))
+            {
+                return false;
+            }
+
+            EnumResultAuthConnect connect = await ApiAuth.Connect(token);
+
+            if (connect == EnumResultAuthConnect.Success)
+            {
+                await CheckRequirements();
+                
+                return true;
+            }
+
+            return false;
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add($"Not able to reconnect : {e.Message}", Severity.Error);
+            return false;
+        }
+        finally
+        {
+            ApiAuth.IsClientConnecting = false;
+        }
+    }
+
+    private async Task CheckRequirements()
+    {
+        if (string.IsNullOrEmpty(ApiAuth.UserConnected.Name))
+        {
+            await RedirectToSelectName("No user name, redirecting...");
+        }
+
+        if (ApiAuth.UserConnected.Origin == null)
+        {
+            await RedirectToSelectOrigin("No origin selected, redirecting...");
+        }
+    }
+
+    private async Task RedirectToSelectName(string reason)
+    {
+        Log.Logger.Warning("Redirecting to origin page because: " + reason);
+        await LocalStorage.SetItemAsync(GlobalConst.KEY_REDIRECT_REASON, reason);
+        NavigationManager.NavigateToPage<PageStartSelectName>();
+    }
+
+    private async Task RedirectToLogin(string reason)
+    {
+        Log.Logger.Warning("Redirecting to home page because: " + reason);
+        await LocalStorage.SetItemAsync(GlobalConst.KEY_REDIRECT_REASON, reason);
+        NavigationManager.NavigateToPage<PageLogin>();
+    }
+
+    private async Task RedirectToSelectOrigin(string reason)
+    {
+        Log.Logger.Warning("Redirecting to origin page because: " + reason);
+        await LocalStorage.SetItemAsync(GlobalConst.KEY_REDIRECT_REASON, reason);
+        NavigationManager.NavigateToPage<PageStartSelectOrigin>();
+    }
+
+    public void Dispose()
+    {
+        ApiAuth.OnDisconnected -= () => { RedirectToLogin("Disconnected, redirecting..."); };
+    }
+
+}

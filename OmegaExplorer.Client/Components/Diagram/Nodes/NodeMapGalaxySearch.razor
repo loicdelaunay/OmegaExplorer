@@ -1,0 +1,44 @@
+﻿@using OmegaExplorer.Client.Components.Diagram.Nodes.Models
+@using OmegaExplorer.Client.Models.Card.Definition
+@using OmegaExplorer.Client.Utilities.Resources
+
+<ContentHover>
+    <Content>
+        <MudStack>
+            <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center">
+                <PreviewSystem Source="@ResourceAnimation.STAR_STANDARD_1" Height="150"></PreviewSystem>
+                <MudPaper Class="pa-2">
+                    <MudStack Spacing="0">
+                        <MudText><b>@Node.StarCluster.Name</b></MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudStack>
+        </MudStack>
+    </Content>
+    <HoverContent>
+        @{
+            CardDefinitionStarCluster? definition = GetCardDefinition();
+
+            if (definition != null)
+            {
+                <Card Hoverable="false" Definition="@definition"></Card>
+            }
+        }
+    </HoverContent>
+</ContentHover>
+
+@code {
+
+    [Parameter]
+    public NodeModelMapGalaxySearch? Node { get; set; }
+
+    private CardDefinitionStarCluster GetCardDefinition()
+    {
+        if (Node == null)
+        {
+            return null;
+        }
+
+        return new CardDefinitionStarCluster(Node.StarCluster);
+    }
+}

@@ -1,0 +1,62 @@
+﻿@using OmegaExplorer.Client.Utilities.Resources
+@using Serilog
+@using Xunit
+@using OmegaExplorer.Toolkit.API
+
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <Header Size="Size.Small" Dialog="true" Title="Renaming spaceship" Subtitle="@Spaceship.Name" Icon="@ResourceIcon.SPACESHIP"></Header>
+        <MudTextField Variant="Variant.Outlined" @bind-Value="_newName" Label="Rename spaceship" Required="true" RequiredError="Name is required"/>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit">Confirm</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; }
+    
+    [Parameter] public ResponseSpaceship Spaceship { get; set; } = null!;
+    
+    private string _newName = string.Empty;
+    
+    protected override void OnInitialized()
+    {
+        Assert.NotNull(Spaceship);
+        
+        _newName = Spaceship.Name;
+    }
+    
+    private void Cancel()
+    {
+        MudDialog.Close();
+    }
+    
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(_newName))
+        {
+            Snackbar.Add("The name cannot be empty", Severity.Warning);
+            return;
+        }
+        
+        try
+        {
+            // Call the API to rename the ship
+            await ApiManager.Client.RenameSpaceshipAsync(Spaceship.Id, _newName);
+            
+            Snackbar.Add($"Vessel renowned in {_newName}", Severity.Success);
+            MudDialog.Close();
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Error(ex, "Error during the renaming");
+            Snackbar.Add($"Error during the renaming : {ex.Message}", Severity.Error);
+        }
+    }
+}

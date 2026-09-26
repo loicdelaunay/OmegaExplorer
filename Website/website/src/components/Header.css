@@ -1,0 +1,18 @@
+﻿.hero-card{
+    min-height: 60vh;
+}
+
+.header-title{
+    font-size: 4rem;
+    font-weight: 700;
+}
+
+.v-theme--dark .header-title{
+    color: var(--v-theme-secondary);
+}
+
+.header-title-1{
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: var(--v-theme-secondary);
+}

@@ -1,0 +1,29 @@
+﻿@using OmegaExplorer.Client.Models.Card
+<Stack
+        Horizontal
+        Wrap
+        HorizontalAlignment="StackAlignment.Start"
+        VerticalAlignment="StackAlignment.Start"
+        HorizontalGap="20"
+        VerticalGap="20">
+        @foreach (CardDefinition cardDefinition in CardDefinitions)
+        {
+            <Card Size="CardSize" Definition="cardDefinition" OnDeleted="OnCardDeleted"></Card>
+        }
+    </Stack>
+
+@code {
+
+    [Parameter]
+    public List<CardDefinition> CardDefinitions { get; set; } = new();
+    
+    [Parameter]
+    public EventCallback<Card> OnCardDeleted { get; set; }
+
+    [Parameter]
+    public EventCallback<Card> OnCardChanged { get; set; }
+
+    [Parameter]
+    public Size CardSize { get; set; } = Size.Medium;
+
+}

@@ -1,0 +1,25 @@
+﻿@using OmegaExplorer.Client.Utilities.Resources
+
+<MudStack Justify="Justify.Center" AlignItems="AlignItems.Center">
+    <!-- Image -->
+    <MudImage Width="@Width" Height="@Width" Src="@ResourceImage.D20_BACKGROUND" Alt="@Value.ToString()"
+              Elevation="25" Class="rounded-lg"/>
+
+    <MudCard Class="pa-1 o-90" Style="position: absolute">
+        <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center">
+            <MudText Typo="Typo.body1"><b>@Value</b></MudText>
+        </MudStack>
+    </MudCard>
+
+</MudStack>
+
+
+@code {
+
+    [Parameter]
+    public int Value { get; set; }
+    
+    [Parameter]
+    public int Width { get; set; } = 80;
+
+}

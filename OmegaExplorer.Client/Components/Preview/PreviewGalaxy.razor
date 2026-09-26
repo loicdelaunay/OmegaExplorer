@@ -1,0 +1,30 @@
+﻿@using OmegaExplorer.Client.Utilities.Resources
+<MudImage Fluid="Fluid" Height="@Height" Width="@Height" Src="@Source"></MudImage>
+
+@code {
+
+    [Parameter]
+    public int Height { get; set; } = 250;
+
+    [Parameter]
+    public string? Source { get; set; }
+
+    [Parameter]
+    public ResponseGalaxy? Galaxy { get; set; }
+
+    [Parameter]
+    public bool Fluid { get; set; } = false;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        if (Source == null && Galaxy != null)
+        {
+            Source = ResourceAnimation.GALAXY_1;
+        }
+
+        StateHasChanged();
+    }
+
+}

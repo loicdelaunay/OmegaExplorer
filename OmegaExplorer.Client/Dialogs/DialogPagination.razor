@@ -1,0 +1,40 @@
+﻿@using Origin = MudBlazor.Origin
+<MudDialog>
+    <DialogContent>
+        <Header Dialog="true" title="Pagination settings" Subtitle="How many elements per page" Size="Size.Small"
+                OnClose="Close"></Header>
+        <MudSelect @bind-Value="_pageSize" Dense="true" Label="elements by page" Variant="Variant.Outlined"
+                   AnchorOrigin="Origin.BottomCenter">
+            <MudSelectItem Value="100"/>
+            <MudSelectItem Value="200"/>
+            <MudSelectItem Value="500"/>
+            <MudSelectItem Value="1000"/>
+        </MudSelect>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Primary" OnClick="Close">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public int CurrentPageSize { get; set; }
+
+    private int _pageSize = 25;
+
+    protected override void OnInitialized()
+    {
+        _pageSize = CurrentPageSize;
+        base.OnInitialized();
+    }
+
+    void Close()
+    {
+        MudDialog.Close(DialogResult.Ok(_pageSize));
+    }
+
+}

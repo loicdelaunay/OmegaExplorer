@@ -1,0 +1,76 @@
+﻿.gain-container {
+    position: relative;
+    width: 100px; /* Adjust as needed */
+    height: 100px; /* Adjust as needed */
+}
+
+/* Chest: closed state by default */
+.gain-chest {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: url('/res/img/icons/chest-closed.png') center center no-repeat;
+    background-size: contain;
+    transition: background 0.5s ease-in-out;
+}
+
+/* Open state triggers the open chest image */
+.gain-container.open .gain-chest {
+    background: url('/res/img/icons/chest.png') center center no-repeat;
+    background-size: contain;
+}
+
+/* Explosion: hidden by default */
+.gain-explosion {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: url('/res/img/icons/chest.png') center center no-repeat;
+    background-size: contain;
+    opacity: 0;
+}
+
+/* Animate explosion when open */
+.gain-container.open .gain-explosion {
+    animation: chestExplosion 1s forwards;
+}
+
+/* Keyframes for the explosion effect */
+@keyframes chestExplosion {
+    0% {
+        opacity: 0;
+        transform: scale(0.1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.3);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+}
+
+/* Gains: hidden by default */
+.gain-result {
+    position: absolute;
+    opacity: 0;
+    transform: translateY(40%);
+}
+
+/* Reveal gains after explosion completes */
+.gain-container.open .gain-result {
+    animation: revealGains 0.8s forwards;
+    animation-delay: 1s; /* Wait for the explosion to finish */
+}
+
+@keyframes revealGains {
+    0% {
+        opacity: 0;
+        transform: translateY(40%);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

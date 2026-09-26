@@ -1,0 +1,17 @@
+﻿@page "/contacts"
+@using OmegaExplorer.Client.Models.Card.Definition
+@using OmegaExplorer.Client.Models.Card.Dynamic.Drivers
+@inject ISnackbar Snackbar
+
+<CheckConnection></CheckConnection>
+
+<Header Title="Contacts" Subtitle="Manage your contact list"></Header>
+
+<DynamicCardStack Driver="new DynamicDriverContact()" TCardDefinition="CardDefinitionUser"></DynamicCardStack>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+}

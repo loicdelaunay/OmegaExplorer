@@ -1,0 +1,67 @@
+﻿@using OmegaExplorer.Client.Utilities.Resources
+@using OmegaExplorer.Server.Extensions
+@inject ISnackbar Snackbar
+@implements IDisposable;
+
+<MudDialog>
+    <DialogContent>
+        <Header Dialog="true" OnClose="@(() => MudDialog.Close())" Size="Size.Small" Title="Debug"
+                Subtitle="Debugging element" Icon="@ResourceIcon.DEBUG">
+        </Header>
+        <MudStack Style="min-width: 80vw; min-height: 70vh">
+            <TextEditor @ref="_textEditor" DefaultData="@GetValue()" ReadOnly="true"></TextEditor>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code{
+
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public object ObjectToDebug { get; set; }
+
+    [Parameter]
+    public bool IsString { get; set; }
+    
+    private TextEditor _textEditor;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+        Dispose();
+    }
+
+    string GetValue()
+    {
+        if (!IsString)
+        {
+            return ObjectToDebug.JsonSerialize(true);
+        }
+
+        try
+        {
+            string? cast = ObjectToDebug as string;
+            return cast;
+        }
+        catch (Exception e)
+        {
+            return "Not able to render as string " + e;
+        }
+    }
+
+    public void Dispose()
+    {
+        _textEditor.Dispose();
+        Snackbar?.Dispose();
+    }
+}

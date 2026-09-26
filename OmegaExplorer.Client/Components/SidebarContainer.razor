@@ -1,0 +1,50 @@
+﻿@using OmegaExplorer.Client.Utilities.Resources
+@using Version = OmegaExplorer.Client.Utilities.Const.Version
+<MudPaper Style="height: 100%" Elevation="0">
+    <MudNavMenu Bordered="true" Rounded="true" Dense="true" Margin="Margin.Dense" Color="Color.Primary" Class="pa-2 overflow-auto h-100 d-flex flex-column" Style="margin-bottom: 200px">
+        <MudText Typo="Typo.h6" Class="ml-3">VERSION <b class="color-version">@Version.VERSION_NAME</b></MudText>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexStart" Spacing="0" Class="ml-3 mt-0 mb-0" Style="position: relative; top: -10px;">
+            <MudText Typo="Typo.body2" Class="cursor-pointer mud-text-secondary slow-blink">REVISION : @Version.VERSION_DETAILS</MudText>
+        </MudStack>
+
+        <BlockCycle></BlockCycle>
+
+        @if (ApiAuth.UserConnected.Origin != null)
+        {
+            <SidebarDefault></SidebarDefault>
+        }
+        else
+        {
+            <SidebarSelectOrigin></SidebarSelectOrigin>
+        }
+
+        @if (ApiAuth.IsAdmin)
+        {
+            <MudNavGroup Title="Admin" IconColor="Color.Error" Icon="@ResourceIcon.ADMIN">
+                <MudNavLink Href="/admin/dashboard" Match="NavLinkMatch.Prefix" IconColor="Color.Error">
+                    <MudText Color="Color.Error">Dashboard</MudText>
+                </MudNavLink>
+                <MudNavLink Href="/admin/functions" Match="NavLinkMatch.Prefix" IconColor="Color.Error">
+                    <MudText Color="Color.Error">Functions</MudText>
+                </MudNavLink>
+                <MudNavLink Href="/admin/editor" Match="NavLinkMatch.Prefix" IconColor="Color.Error">
+                    <MudText Color="Color.Error">Editor</MudText>
+                </MudNavLink>
+                <MudNavLink Href="/admin/users" Match="NavLinkMatch.Prefix" IconColor="Color.Error">
+                    <MudText Color="Color.Error">Users</MudText>
+                </MudNavLink>
+            </MudNavGroup>
+        }
+
+        <div style="flex-grow: 1;"></div>
+        <BlockCurrentTechnology></BlockCurrentTechnology>
+    </MudNavMenu>
+</MudPaper>
+
+@code {
+
+    public void ForceStateHasChanged()
+    {
+        StateHasChanged();
+    }
+}

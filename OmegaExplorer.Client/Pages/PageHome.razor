@@ -1,0 +1,11 @@
+﻿@page "/"
+@inherits BasePage
+
+<Header Title="@Translation.home" Subtitle="@Title"></Header>
+<CheckConnection></CheckConnection>
+
+
+@code
+{
+    private string Title => Translation.welcome_on + " OmegaExplorer";
+}

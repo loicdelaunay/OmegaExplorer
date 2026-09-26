@@ -1,0 +1,242 @@
+﻿@using System.Reflection
+@using OmegaExplorer.Client.Utilities.Extensions
+@using OmegaExplorer.Client.Utilities.Resources
+@using OmegaExplorer.Shared.Filters
+@using Serilog
+@using Environment = System.Environment
+
+<MudStack Style="width: 100%" AlignItems="AlignItems.Center">
+    <MudStack AlignItems="AlignItems.Center" Style="width: 100%" Row="true">
+        <MudFocusTrap Style="width: 100%!important;">
+            <MudTextField Disabled="true" @ref="_mainSearchField" Margin="Margin.Dense" T="string" Value="@GetMainSearchDefaultValue()" ValueChanged="CallMainSearchChanged" Immediate="true" Label="@GetLabel()" Variant="Variant.Outlined" Clearable="true" OnKeyDown="OnKeyDownSearch"></MudTextField>
+        </MudFocusTrap>
+        <MudText Typo="Typo.subtitle2">Work in progress</MudText>
+
+        <MudIconButtonWithLabel Label="OrderBy" Icon="@ResourceIcon.ORDERS"></MudIconButtonWithLabel>
+        <MudIconButtonWithLabel ToggleMode="true" OnClick="@ToggleOpen" Label="Filters" Icon="@ResourceIcon.FILTER" Count="@Filters?.Data?.Count"></MudIconButtonWithLabel>
+        <MudIconButtonWithLabel OnClick="CallOnClear" Label="Clear" Icon="@ResourceIcon.FILTER_CLEAR"></MudIconButtonWithLabel>
+        <MudButton OnClick="CallOnSearch" Variant="Variant.Filled" Color="Color.Primary">Search</MudButton>
+    </MudStack>
+
+    @if (_properties != null)
+    {
+        <div hidden="@(!_showFilters)">
+
+            <MudDivider Class="mb-2"></MudDivider>
+            <Stack Horizontal
+                   Wrap
+                   HorizontalAlignment="StackAlignment.Start"
+                   VerticalAlignment="StackAlignment.Start"
+                   HorizontalGap="5"
+                   VerticalGap="5">
+                @foreach (PropertyInfo property in _properties)
+                {
+                    <DynamicField DynamicSearch="this" Property="property"></DynamicField>
+                }
+            </Stack>
+        </div>
+    }
+</MudStack>
+
+@code {
+    [Parameter] public object? Sample { get; set; }
+    [Parameter] public EventCallback OnSearch { get; set; }
+    [Parameter] public EventCallback OnFastSearch { get; set; }
+    [Parameter] public EventCallback OnClear { get; set; }
+
+    [Parameter] public DynamicDriverFilter? Filters { get; set; } = new();
+
+    [Parameter] public EventCallback<DynamicDriverFilter> FiltersChanged { get; set; }
+
+    private const int MAIN_SEARCH_DELAY = 500;
+
+    private string _searchBy = string.Empty;
+    private PropertyInfo[]? _properties;
+    private bool _showFilters;
+    private MudTextField<string> _mainSearchField;
+
+    private bool _mainSearchIsWaiting;
+    private int _mainSearchDelay = MAIN_SEARCH_DELAY;
+    private readonly int _mainSearchDelayStep = 100;
+    private string _mainSearchValue = string.Empty;
+
+    private void ToggleOpen()
+    {
+        _showFilters = !_showFilters;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        GetMainProperty();
+        GetProperties();
+
+        await base.OnInitializedAsync();
+
+        Log.Information($"[{nameof(DynamicSearch)}] : loaded with {_properties?.Length} properties and search by {_searchBy}");
+    }
+
+    private string GetMainSearchDefaultValue()
+    {
+        if (string.IsNullOrEmpty(value: _searchBy))
+        {
+            return string.Empty;
+        }
+
+        if (Filters?.Data != null && Filters.Data.TryGetValue(key: _searchBy, value: out string? res))
+        {
+            return res;
+        }
+
+        return string.Empty;
+    }
+
+    private void GetMainProperty()
+    {
+        if (Sample == null)
+        {
+            _searchBy = string.Empty;
+            return;
+        }
+
+        Type type = Sample.GetType();
+        PropertyInfo? nameProperty = type.GetProperty(name: "Name");
+
+        if (nameProperty != null)
+        {
+            _searchBy = "name";
+        }
+        else
+        {
+            PropertyInfo? firstProperty = type.GetProperties().FirstOrDefault();
+            if (firstProperty != null)
+            {
+                _searchBy = firstProperty.Name;
+            }
+        }
+
+        //StateHasChanged();
+    }
+
+    private void GetProperties()
+    {
+        if (Sample == null)
+        {
+            return;
+        }
+
+        Type type = Sample.GetType();
+        _properties = type.GetProperties();
+
+        //StateHasChanged();
+    }
+
+    public void SetFilter(string key, string value)
+    {
+        if (string.IsNullOrEmpty(key))
+        {
+            return;
+        }
+
+        key = key.ToLowerInvariant();
+
+        if (string.IsNullOrEmpty(value: value))
+        {
+            Filters.Data.Remove(key: key.ToLowerInvariant());
+        }
+        else
+        {
+            Filters.Data[key: key] = value;
+        }
+
+        FiltersChanged.InvokeAsync(arg: Filters);
+        StateHasChanged();
+    }
+
+    public string GetFilter(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return string.Empty;
+        }
+
+        name = name.ToLowerInvariant();
+
+        return Filters.Data.TryGetValue(key: name, value: out string? result) ? result : string.Empty;
+    }
+
+    private void CallOnSearch()
+    {
+        OnSearch.InvokeAsync();
+    }
+
+    private void CallMainSearchChanged(string value)
+    {
+        _mainSearchDelay = MAIN_SEARCH_DELAY;
+        _mainSearchValue = value;
+        _ = UpdateMainSearchLoop();
+    }
+
+    private async Task UpdateMainSearchLoop(bool looping = false)
+    {
+        if (_mainSearchIsWaiting && !looping)
+        {
+            return;
+        }
+
+        _mainSearchIsWaiting = true;
+
+        await Task.Delay(millisecondsDelay: _mainSearchDelayStep);
+        _mainSearchDelay -= _mainSearchDelayStep;
+
+        if (_mainSearchDelay <= 0)
+        {
+            _mainSearchIsWaiting = false;
+            if (!string.IsNullOrEmpty(_searchBy))
+            {
+                _ = Task.Factory.StartNew(() => { SetFilter(_searchBy, _mainSearchValue); });
+            }
+        }
+        else
+        {
+            _ = UpdateMainSearchLoop(looping: true);
+        }
+    }
+
+    private string GetFiltersToString()
+    {
+        string res = string.Empty;
+
+        foreach (KeyValuePair<string, string> filter in Filters.Data)
+        {
+            res += $"{filter.Key} | {filter.Value}{Environment.NewLine}";
+        }
+
+        return res;
+    }
+
+    private async Task CallOnClear()
+    {
+        Filters.Data.Clear();
+        await OnSearch.InvokeAsync();
+    }
+
+    private void OnKeyDownSearch(KeyboardEventArgs key)
+    {
+        if (key.EnterKeyPressed())
+        {
+            SetFilter(key: _searchBy, value: _mainSearchValue);
+            CallOnSearch();
+        }
+    }
+
+    private string GetLabel()
+    {
+        if (string.IsNullOrEmpty(_searchBy))
+        {
+            return string.Empty;
+        }
+
+        return "Search by " + _searchBy;
+    }
+
+}

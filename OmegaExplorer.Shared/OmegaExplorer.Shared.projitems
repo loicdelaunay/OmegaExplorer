@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>6EF02435-A8C2-49E9-8CAF-B856F402C3D7</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>OmegaExplorer.Shared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Enums\EnumCustomStatusCode.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Enums\Position.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\ClaimPrincipaleExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\DateTimeExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\DirectoryInfoExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\EnumExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\ExperienceExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\FileInfoExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\GuidExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\IntExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\JObjectExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\ListExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\LongExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\ObjectExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\StreamExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\StringExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\TaskExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\TypeExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\Vector2Extension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Filters\DynamicDriverBuildingFilter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Filters\DynamicDriverFilter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Filters\DynamicDriverGalaxyFilter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Filters\DynamicDriverScenarioProgressFilter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Filters\DynamicDriverSpaceshipFilter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Filters\DynamicDriverStarClusterFilter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Filters\DynamicDriverStarSystemFilter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Hubs\Events\CycleHubInformation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Hubs\Events\CycleProcessHubInformation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Hubs\Events\NotificationHubInformation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\Classes\ProgressInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utilities\Copier\CopyExtension.cs"/>
+    <Compile Include="$(MSBuildThisFileDirectory)Utilities\Copier\GenericCopier.cs"/>
+    <Compile Include="$(MSBuildThisFileDirectory)Utilities\Humanizer\HumanizerString.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utilities\Log\CustomSerilogTheme.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utilities\Log\SerilogExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utilities\Log\CustomColoredFormatter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utilities\Math\Vector2Utility.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utilities\Random\RandomWithSeed.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utilities\Serializer\JsonSerializerManager.cs" />
+  </ItemGroup>
+</Project>

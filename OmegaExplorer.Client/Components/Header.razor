@@ -1,0 +1,181 @@
+﻿@using OmegaExplorer.Shared.Utilities.Humanizer
+@using OmegaExplorer.Client.Utilities.Resources
+<PageTitle>OmegaExplorer | @Title</PageTitle>
+
+<MudStack Style="@GetStyle()" Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexStart">
+        @if (!string.IsNullOrEmpty(value: Icon))
+        {
+            <MudStack>
+                <MudIcon Icon="@Icon"></MudIcon>
+            </MudStack>
+        }
+        <MudStack Spacing="0">
+            <MudText Style="@GetStyleHeader()" Typo="GetTitleTypo()">
+                <b>@Title?.ToTitle()</b>
+                @switch (Type)
+                {
+                    case PageType.Beta:
+                        <MudChip T="string" Color="Color.Warning" Size="Size.Small">In test</MudChip>
+                        break;
+                    case PageType.Dev:
+                        <MudChip T="string" Color="Color.Error" Size="Size.Small">In development</MudChip>
+                        break;
+                }
+            </MudText>
+            @if (!string.IsNullOrEmpty(value: Subtitle))
+            {
+                <MudText Typo="GetSubtitleTypo()">@Subtitle.ToTitle()</MudText>
+            }
+        </MudStack>
+    </MudStack>
+    @if (Dialog)
+    {
+        <MudStack Row="true">
+            @if (DebugObject != null && MainLayout.UserSettings.IsDev)
+            {
+                <MudIconButtonWithLabel Label="Debug" Color="Color.Warning" OnClick="OnDebugClicked"
+                                        Icon="@ResourceIcon.DEBUG">
+                </MudIconButtonWithLabel>
+            }
+            @if (EnableSettings)
+            {
+                <MudIconButtonWithLabel Label="Settings" OnClick="@(() => OnSettings.InvokeAsync())"
+                                        Icon="@ResourceIcon.SETTINGS">
+                </MudIconButtonWithLabel>
+            }
+            <MudIconButtonWithLabel Color="Color.Error" Label="Close" OnClick="@(() => OnClose.InvokeAsync())"
+                                    Icon="@ResourceIcon.CLOSE">
+            </MudIconButtonWithLabel>
+        </MudStack>
+    }
+
+</MudStack>
+<MudDivider Class="@GetStyleDivider()"></MudDivider>
+
+@code {
+
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Subtitle { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Icon { get; set; } = string.Empty;
+
+    [Parameter]
+    public PageType Type { get; set; } = PageType.Stable;
+
+    [Parameter]
+    public Size Size { get; set; } = Size.Large;
+
+    [Parameter]
+    public bool Dialog { get; set; } = false;
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public bool EnableSettings { get; set; } = false;
+
+    [Parameter]
+    public EventCallback OnSettings { get; set; }
+
+    [Parameter]
+    public bool EnableBackButton { get; set; } = false;
+
+    [Parameter]
+    public string BackButtonLabel { get; set; } = "Back";
+
+    [Parameter]
+    public object DebugObject { get; set; }
+
+    [Parameter]
+    public bool InspectorMode { get; set; }
+
+    [Parameter]
+    public EventCallback OnBackClicked { get; set; }
+
+
+    public enum PageType
+    {
+        Stable,
+        Beta,
+        Dev
+    }
+
+    private Typo GetTitleTypo()
+    {
+        Typo typo = Size switch
+        {
+            Size.Small => Typo.h6,
+            Size.Medium => Typo.h5,
+            Size.Large => Typo.h4,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        return typo;
+    }
+
+    private Typo GetSubtitleTypo()
+    {
+        Typo typo = Size switch
+        {
+            Size.Small => Typo.caption,
+            Size.Medium => Typo.body2,
+            Size.Large => Typo.body1,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        return typo;
+    }
+
+    private string GetStyleHeader()
+    {
+        string style = Size switch
+        {
+            Size.Small => "height: 25px",
+            Size.Medium => string.Empty,
+            Size.Large => string.Empty,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        return style;
+    }
+
+    private string GetStyleDivider()
+    {
+        string style = Size switch
+        {
+            Size.Small => "mt-1 mb-3",
+            Size.Medium => "mt-2 mb-3",
+            Size.Large => "mt-3 mb-3",
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        return style;
+    }
+
+    private string GetStyle()
+    {
+        string res = "gap: 8px;";
+        if (Dialog)
+        {
+            res += " position: sticky; top: 0; background-color: var(--mud-palette-surface) !important; border-radius: 4px; padding: 8px;";
+        }
+
+        return res;
+    }
+
+    private async void OnDebugClicked()
+    {
+        MainLayout.Instance.DialogTemplates.OpenDialogDebug(DebugObject);
+    }
+
+    private void CallBackClicked()
+    {
+        OnBackClicked.InvokeAsync();
+    }
+
+}

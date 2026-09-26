@@ -1,0 +1,47 @@
+﻿@page "/spaceships"
+@using OmegaExplorer.Client.Models.Card.Definition
+@using OmegaExplorer.Shared.Filters
+@using Serilog
+
+@inject ISnackbar Snackbar
+
+<CheckConnection></CheckConnection>
+<Header Title="Fleets" Subtitle="Manage your fleet of ships"></Header>
+
+<DynamicCardStack @ref="_cardStack" TCardDefinition="CardDefinitionSpaceship" Filter="_filter"></DynamicCardStack>
+
+@code {
+    private DynamicCardStack<CardDefinitionSpaceship> _cardStack;
+
+    private DynamicDriverSpaceshipFilter _filter = new DynamicDriverSpaceshipFilter()
+        .AddFilterBySpaceshipOwner(DynamicDriverSpaceshipFilter.SpaceshipOwner.ConnectedPlayer);
+
+    private async void CallBuild()
+    {
+        try
+        {
+            //Select blueprint to build
+            ResponseBlueprintSpaceship? blueprint = await MainLayout.Instance.DialogTemplates.OpenPicker<CardDefinitionBlueprintSpaceship, ResponseBlueprintSpaceship>();
+
+            if (blueprint == null)
+            {
+                return;
+            }
+
+            //Build the spaceship
+            RequestCreateSpaceship request = new()
+            {
+                BlueprintId = blueprint.Id
+            };
+
+            await ApiManager.Client.CreateSpaceshipAsync(request);
+            _cardStack.Get();
+        }
+        catch (Exception e)
+        {
+            Log.Logger.Error(e, "Not able to create spaceship");
+            Snackbar.Add($"Not able to create spaceship{e.Message}", Severity.Error);
+        }
+    }
+
+}

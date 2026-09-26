@@ -1,0 +1,58 @@
+﻿/* CSS for the animated halo effect */
+.halo-effect {
+    position: relative;
+    overflow: hidden; /* Ensure the pseudo-element doesn't overflow */
+}
+
+.halo-effect::before {
+    content: "";
+    position: absolute;
+    top: -20%;
+    left: -20%;
+    width: 80%;
+    height: 100%;
+    background: radial-gradient(circle, var(--color-origin), transparent);
+    z-index: 0;
+    animation: haloAnimation 3s infinite;
+    /* Optionally, you can add blur for a softer look */
+    filter: blur(8px);
+}
+
+.halo-common::before{
+    background: radial-gradient(circle, var(--color-common), transparent) !important;
+}
+
+.halo-uncommon::before{
+    background: radial-gradient(circle, var(--color-uncommon), transparent) !important;
+}
+
+.halo-rare::before{
+    background: radial-gradient(circle, var(--color-rare), transparent) !important;
+}
+
+.halo-epic::before{
+    background: radial-gradient(circle, var(--color-epic), transparent) !important;
+}
+
+.halo-legendary::before{
+    background: radial-gradient(circle, var(--color-legendary), transparent) !important;
+}
+
+.halo-origin::before{
+    background: radial-gradient(circle, var(--color-origin), transparent) !important;
+}
+
+@keyframes haloAnimation {
+    0% {
+        transform: scale(0.9);
+        opacity: 0.2;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(0.9);
+        opacity: 0.2;
+    }
+}

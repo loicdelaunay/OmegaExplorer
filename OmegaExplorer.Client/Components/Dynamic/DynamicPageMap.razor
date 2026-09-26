@@ -1,0 +1,125 @@
+﻿@using OmegaExplorer.Client.Components.Maps.Drivers
+@using OmegaExplorer.Shared.Filters
+@using OmegaExplorer.Client.Services.UserPreference
+@using Serilog
+@using OmegaExplorer.Server.Extensions
+
+
+@typeparam TDynamicMapDriver where TDynamicMapDriver : DynamicMapDriver
+@typeparam TCardDefinition where TCardDefinition : OmegaExplorer.Client.Models.Card.CardDefinition
+@typeparam TCardDefinition2 where TCardDefinition2 : OmegaExplorer.Client.Models.Card.CardDefinition
+
+@inject IUserPreference UserPreference;
+
+<MudTabs @ref="_mudTabs" Elevation="1" Rounded="true" PanelClass="pa-6" KeepPanelsAlive="false"
+         ActivePanelIndex="_activePanelIndex"
+         ActivePanelIndexChanged="OnActivePanelIndexChanged">
+
+    <MudTabPanel Text="Map">
+        <DynamicMap T="TDynamicMapDriver" Filter="Filter"></DynamicMap>
+    </MudTabPanel>
+
+    <MudTabPanel Text="List">
+        <MudStack>
+            <DynamicCardStack RefreshOnInitialization="true" Filter="Filter" @ref="_dynamicCardStack"
+                              TCardDefinition="TCardDefinition"></DynamicCardStack>
+
+            @if (EnableSecondCardStack)
+            {
+                <DynamicCardStack RefreshOnInitialization="true" Filter="FilterSecond" @ref="_dynamicCardStack2"
+                                  TCardDefinition="TCardDefinition2"></DynamicCardStack>
+            }
+        </MudStack>
+    </MudTabPanel>
+</MudTabs>
+
+
+@code {
+
+    [Parameter]
+    public Guid? Id { get; set; }
+
+    [Parameter]
+    public bool EnableSecondCardStack { get; set; } = false;
+
+    [Parameter]
+    public bool LoadOnInitialization { get; set; } = true;
+
+    [Parameter]
+    public DynamicDriverFilter Filter { get; set; }
+
+    [Parameter]
+    public DynamicDriverFilter FilterSecond { get; set; }
+
+    private ResponseStarCluster _starCluster;
+
+    private DynamicCardStack<TCardDefinition> _dynamicCardStack;
+    private DynamicCardStack<TCardDefinition2> _dynamicCardStack2;
+
+    private DynamicMap<DynamicMapDriverStarCluster> _dynamicMap;
+
+    private int _activePanelIndex = 0;
+    private MudTabs _mudTabs;
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        Log.Logger.Information($"[{nameof(DynamicPageMap<TDynamicMapDriver, TCardDefinition, TCardDefinition2>)}] : initializing...");
+        if (Id.IsNullOrEmpty())
+        {
+            Log.Logger.Error($"[{nameof(DynamicPageMap<TDynamicMapDriver, TCardDefinition, TCardDefinition2>)}] : Id is null or empty, please check filter to add Id parameter");
+            return;
+        }
+        
+        await base.OnInitializedAsync();
+
+        #region Get last user preference for active panel index ( Map or List )
+
+        int index = await UserPreference.GetPreferenceAsync<int>(UserPreferenceKey.KEY_MAP_LIST_OR_MAP);
+
+        if (index != -1)
+        {
+            _activePanelIndex = index;
+            _mudTabs.ActivatePanel(_activePanelIndex);
+        }
+
+        #endregion
+
+        Log.Logger.Information($"[{nameof(DynamicPageMap<TDynamicMapDriver, TCardDefinition, TCardDefinition2>)}] : initialized");
+    }
+
+    private async Task OnActivePanelIndexChanged(int index)
+    {
+        _activePanelIndex = index;
+        await UserPreference.SetPreferenceAsync(UserPreferenceKey.KEY_MAP_LIST_OR_MAP, index);
+    }
+
+    public void SetFilter(DynamicDriverFilter filter, bool refresh = false)
+    {
+        _dynamicCardStack.Filter = filter;
+
+        if (refresh)
+        {
+            _dynamicCardStack.Get();
+        }
+    }
+
+    public void SetFilterOnSecondCardStack(DynamicDriverFilter filter, bool refresh = false)
+    {
+        if (EnableSecondCardStack)
+        {
+            _dynamicCardStack2.Filter = filter;
+
+            if (refresh)
+            {
+                _dynamicCardStack2.Get();
+            }
+        }
+        else
+        {
+            Log.Logger.Warning($"[{nameof(DynamicPageMap<TDynamicMapDriver, TCardDefinition, TCardDefinition2>)}] : SetFilterOnSecondCardStack called but EnableSecondCardStack is false");
+        }
+    }
+
+}

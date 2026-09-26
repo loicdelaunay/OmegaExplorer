@@ -1,0 +1,55 @@
+﻿@inject ISnackbar Snackbar;
+
+<MudDialog>
+    <DialogContent>
+        <MudStack>
+            <MudTextField Variant="Variant.Outlined" Label="Name" @bind-Value="_requestUpdateUser.Name"></MudTextField>
+            <MudCheckBox T="bool?" Label="Disabled" Color="Color.Primary" @bind-Value="_requestUpdateUser.Disabled"></MudCheckBox>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit">Update</MudButton>
+    </DialogActions>
+        <DialogActions>
+            <MudButton OnClick="Cancel">Cancel</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit">Update</MudButton>
+        </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; }
+    
+    [Parameter]
+    public Guid userToEditId { get; set; }
+    
+    private readonly RequestUpdateUser _requestUpdateUser = new();
+
+    protected override void OnInitialized()
+    {
+        _requestUpdateUser.UserId = userToEditId;
+        base.OnInitialized();
+    }
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    async void Submit()
+    {
+        try
+        {
+            await ApiManager.Client.UpdateUserAsync(_requestUpdateUser);
+                Snackbar.Add("Successfully update new user", Severity.Success);
+
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.ToString());
+            Snackbar.Add("Not able to update a new user " + e.Message, Severity.Error);
+        }
+    }
+}

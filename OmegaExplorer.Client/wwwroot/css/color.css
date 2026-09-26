@@ -1,0 +1,58 @@
+﻿:root {
+    --color-common: #c1c1c1;
+    --color-uncommon: #7ada7a;
+    --color-rare: #6161d5;
+    --color-epic: #b35bb3;
+    --color-legendary: #ffc251;
+    --color-origin: #f47878;
+    --color-background-message: #4177f0;
+    --color-background-message-user: #f0f0f0;
+}
+
+.color-origin {
+    color: var(--color-origin) !important;
+}
+
+.color-background-origin{
+    background-color: var(--color-origin) !important;
+}
+
+.color-common {
+    color: var(--color-common) !important;
+}
+
+.color-background-common{
+    background-color: var(--color-common) !important;
+}
+
+.color-uncommon {
+    color: var(--color-uncommon) !important;
+}
+
+.color-background-uncommon{
+    background-color: var(--color-uncommon) !important;
+}
+
+.color-rare {
+    color: var(--color-rare) !important;
+}
+
+.color-background-rare{
+    background-color: var(--color-rare) !important;
+}
+
+.color-epic {
+    color: var(--color-epic) !important;
+}
+
+.color-background-epic{
+    background-color: var(--color-epic) !important;
+}
+
+.color-legendary {
+    color: var(--color-legendary) !important;
+}
+
+.color-background-legendary{
+    background-color: var(--color-legendary) !important;
+}

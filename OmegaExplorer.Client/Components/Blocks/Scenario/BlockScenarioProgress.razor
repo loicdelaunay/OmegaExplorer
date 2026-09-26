@@ -1,0 +1,193 @@
+﻿@using OmegaExplorer.Client.Utilities.Resources
+@using System.Collections.Generic
+
+@inject ISnackbar Snackbar
+
+<MudStack>
+    <MudGrid Justify="Justify.Center">
+        <MudItem xs="9">
+            <MudCard Outlined="true" Class="pa-2">
+                <MudStack>
+                    <MudText Typo="Typo.h5">@ScenarioProgress.ScenarioData.Name</MudText>
+                    <MudCard>@ScenarioProgress.ScenarioData.Description</MudCard>
+                    <MudDivider></MudDivider>
+
+                    @for (int i = 0; i < ScenarioProgress.ScenarioData.Dialogs.Count; i++)
+                    {
+                        ResponseScenarioDialog? dialog = ScenarioProgress.ScenarioData.Dialogs[i];
+                        int dialogId = i;
+
+                        //Check if next dialog had a previous choice to set readonly
+                        bool isReadOnly = false;
+                        bool nextDialogExists = i < ScenarioProgress.ScenarioData.Dialogs.Count - 1;
+                        if (nextDialogExists)
+                        {
+                            ResponseScenarioDialog? nextDialog = ScenarioProgress.ScenarioData.Dialogs[i + 1];
+                            isReadOnly = nextDialog.PreviousChoice != null;
+                        }
+
+                        if (_visibleDialogIds.Contains(dialogId))
+                        {
+                            //If the next dialog have previous choice, we need to show it
+                            if (dialog.PreviousChoice != null)
+                            {
+                                <div class="animate-in-element">
+                                    <BlockScenarioChoice IsReadOnly="true" Choice="dialog.PreviousChoice"></BlockScenarioChoice>
+                                </div>
+                            }
+
+                            @if (_isTypingAnimation.ContainsKey(dialogId) && _isTypingAnimation[dialogId])
+                            {
+                                <div class="animate-in-element">
+                                    <MudCard Class="pa-2">
+                                        <MudStack Row="true">
+                                            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                            <MudText>@ScenarioProgress.ScenarioData.Dialogs.FirstOrDefault().Celebrity?.Name writing..</MudText>
+                                        </MudStack>
+                                    </MudCard>
+                                </div>
+                            }
+                            else if(_isTypingAnimation.ContainsKey(dialogId) && !_isTypingAnimation[dialogId])
+                            {
+                                <div class="animate-in-element">
+                                    <BlockScenarioDialog IsReadOnly="isReadOnly"
+                                                        OnScenarioProgressUpdate="OnUserScenarioProgressUpdate"
+                                                        ScenarioProgress="ScenarioProgress"
+                                                        Dialog="dialog"></BlockScenarioDialog>
+                                </div>
+                            }
+                        }
+                    }
+                </MudStack>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="3">
+            <MudCard Class="pa-2">
+                <MudStack>
+                    <MudImage Class="rounded-lg" Height="435" Fluid="true" ObjectFit="ObjectFit.Fill"
+                              Src="@ResourceImage.GetImageScenario(ScenarioProgress.Index)">
+                    </MudImage>
+
+                    <MudText>@ScenarioProgress.ScenarioData.Dialogs.FirstOrDefault().Celebrity?.Name</MudText>
+
+                    <Stack Horizontal="true">
+                        <MudChip Color="Color.Primary" Size="Size.Small" T="string">Authoritative</MudChip>
+                        <MudChip Size="Size.Small" T="string">Kind</MudChip>
+                        <MudChip Size="Size.Small" T="string">Direct</MudChip>
+                        <MudChip Size="Size.Small" T="string">?</MudChip>
+                        <MudChip Size="Size.Small" T="string">?</MudChip>
+                    </Stack>
+                </MudStack>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudStack>
+
+@code {
+    [Parameter]
+    public ResponseUserScenarioProgress ScenarioProgress { get; set; }
+
+    [Parameter]
+    public EventCallback<ResponseUserScenarioProgress> OnScenarioProgressUpdate { get; set; }
+
+    //Simulate the animation of the dialogues
+    private List<int> _visibleDialogIds = new();
+    private Dictionary<int, bool> _isTypingAnimation = new();
+    private Queue<int> _animationQueue = new();
+    private bool _isAnimating = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ApiAuth.AwaitConnection();
+
+        // Initializing with the firsts visible dialogue
+        @foreach(ResponseScenarioDialog? dialog in ScenarioProgress.ScenarioData.Dialogs)
+        {
+            int dialogId = ScenarioProgress.ScenarioData.Dialogs.IndexOf(dialog);
+            _visibleDialogIds.Add(dialogId);
+            _isTypingAnimation[dialogId] = false;
+        }
+
+        await base.OnInitializedAsync();
+    }
+
+    private async Task OnUserScenarioProgressUpdate(ResponseUserScenarioProgress userScenarioProgress)
+    {
+        ScenarioProgress = userScenarioProgress;
+
+        // Identify the new dialogues to display
+        int newDialogsCount = ScenarioProgress.ScenarioData.Dialogs.Count;
+        for (int i = 0; i < newDialogsCount; i++)
+        {
+            if (!_visibleDialogIds.Contains(i))
+            {
+                _animationQueue.Enqueue(i);
+            }
+        }
+
+        // Launch the animation if it is not already in class
+        if (!_isAnimating)
+        {
+            await AnimateDialogues();
+        }
+
+        // Throw the event to update the parent component
+        OnScenarioProgressUpdate.InvokeAsync(ScenarioProgress);
+    }
+
+    private async Task AnimateDialogues()
+    {
+        _isAnimating = true;
+
+        // Animate each dialogue one by one
+        while (_animationQueue.Count > 0)
+        {
+            int dialogId = _animationQueue.Dequeue();
+            ResponseScenarioDialog? dialog = ScenarioProgress.ScenarioData.Dialogs[dialogId];
+
+            // Afficher d'abord le choix précédent s'il existe
+            if (dialog.PreviousChoice != null)
+            {
+                _visibleDialogIds.Add(dialogId);
+                await InvokeAsync(StateHasChanged);
+
+                // Attendre un peu après l'affichage du choix
+                await Task.Delay(1000);
+
+                // Initialiser l'état d'animation avant de rendre le dialogue visible
+                _isTypingAnimation[dialogId] = true;
+                await InvokeAsync(StateHasChanged);
+
+                // Simuler le temps de saisie
+                await Task.Delay(2000);
+
+                // Désactiver l'animation et afficher la réponse
+                _isTypingAnimation[dialogId] = false;
+                await InvokeAsync(StateHasChanged);
+            }
+            else
+            {
+                // Pour les dialogues sans choix précédent,
+                // activer d'abord l'animation d'écriture
+                _isTypingAnimation[dialogId] = true;
+
+                // Puis rendre le dialogue visible
+                _visibleDialogIds.Add(dialogId);
+                await InvokeAsync(StateHasChanged);
+
+                // Simuler le temps de saisie
+                await Task.Delay(2000);
+
+                // Désactiver l'animation et afficher la réponse
+                _isTypingAnimation[dialogId] = false;
+                await InvokeAsync(StateHasChanged);
+            }
+
+            // Wait a little before displaying the next element
+            await Task.Delay(1000);
+        }
+
+        _isAnimating = false;
+    }
+}

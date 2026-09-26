@@ -1,0 +1,62 @@
+﻿@using OmegaExplorer.Client.Utilities.Resources
+
+
+<MudCard Outlined="true" Class="pa-2 ma-2">
+    <MudStack AlignItems="AlignItems.Center" Row="true">
+        <MudImage Height="20" Width="20" Src="@ResourceImage.GetImageGameResource(Modifier.Index)"></MudImage>
+
+        <MudText Typo="Typo.caption">
+            @GetName() :
+
+            @if (Modifier.Amount > 0)
+            {
+                <span>+</span>
+            }
+
+            @Modifier.Amount
+
+            @if (Modifier.Duration > 0)
+            {
+                <span> for @Modifier.Duration turn</span>
+            }
+
+            @if (Modifier.StartCycle != null)
+            {
+                <span> end in @GetRemainingTurn() turns</span>
+            }
+
+        </MudText>
+    </MudStack>
+</MudCard>
+
+
+@code {
+
+    [Parameter]
+    public ResponseModifierResource Modifier { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+
+    private string GetName()
+    {
+        if (Modifier.Data == null)
+        {
+            return Modifier.Name;
+        }
+
+        return Modifier.Data.Name;
+    }
+
+    private int GetRemainingTurn()
+    {
+        long? endTurn = Modifier.StartCycle;
+        int duration = Modifier.Duration;
+        long currentTurn = MainLayout.Instance.CycleState.CycleCount;
+
+        return (int) (endTurn.Value + duration - currentTurn);
+    }
+
+}

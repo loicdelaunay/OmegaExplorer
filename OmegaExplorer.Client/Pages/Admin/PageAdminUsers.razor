@@ -1,0 +1,46 @@
+﻿@page "/admin/users"
+@using OmegaExplorer.Client.Models.Card
+@using OmegaExplorer.Client.Models.Card.Definition
+@using OmegaExplorer.Client.Utilities.Resources
+@inject ISnackbar Snackbar
+
+<Header Title="Administration users" Subtitle="Manage users"></Header>
+
+<MudPaper Class="mb-2" Outlined="true">
+    <MudToolBar Dense="true">
+        <MudIconButton OnClick="Refresh" Icon="@ResourceIcon.REFRESH" Color="Color.Primary" Class="mr-5"/>
+    </MudToolBar>
+</MudPaper>
+
+<CardStack CardDefinitions="_definitionUsers"></CardStack>
+
+
+@code {
+    private List<CardDefinition> _definitionUsers = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        Refresh();
+    }
+
+    private async void Refresh()
+    {
+        try
+        {
+            List<ResponseUser>? users = await ApiManager.Client.GetAllUsersAsync();
+            _definitionUsers.Clear();
+        
+            foreach (ResponseUser user in users)
+            {
+                _definitionUsers.Add(new CardDefinitionUser(user, true));
+            }
+            StateHasChanged();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            Snackbar.Add($"Error while loading users: {e.Message}", Severity.Error);
+        }
+    }
+}

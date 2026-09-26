@@ -1,0 +1,20 @@
+﻿@using System.Reflection
+
+<MudTextField Clearable="true" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" Label="@Property.Name"
+              T="string" ValueChanged="OnValueChanged">
+</MudTextField>
+
+@code {
+
+    [Parameter]
+    public PropertyInfo Property { get; set; }
+
+    [Parameter]
+    public DynamicSearch DynamicSearch { get; set; }
+
+    private void OnValueChanged(string value)
+    {
+        DynamicSearch.SetFilter(key: Property.Name, value: value);
+    }
+
+}

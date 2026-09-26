@@ -1,0 +1,23 @@
+﻿<MudStack Justify="Justify.FlexEnd" AlignItems="Alignment" Class="sticky-block mt-5" Style="z-index: 50">
+    <MudPaper Class="pa-2" style="pointer-events: auto">
+        @ChildContent
+    </MudPaper>
+</MudStack>
+
+<Style>
+    .sticky-block {
+        pointer-events: none;
+        position: sticky;
+        bottom: 50px;
+    }
+</Style>
+
+@code {
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public AlignItems? Alignment { get; set; } = AlignItems.Center;
+
+}

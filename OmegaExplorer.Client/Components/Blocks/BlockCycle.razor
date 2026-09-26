@@ -1,0 +1,274 @@
+﻿@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+@inject CycleHubProvider CycleHubProvider
+@inject CycleProcessHubProvider CycleProcessHubProvider
+
+@using OmegaExplorer.Client.Providers.Hubs
+@using OmegaExplorer.Client.Utilities.Resources
+@using Serilog
+@using OmegaExplorer.Shared.Models.Classes
+@implements IDisposable
+
+<MudPaper Class="pa-1 pl-2 pr-2 mb-2 cursor-pointer hoverable hoverable-animation"
+          Outlined="true">
+    @if (ResponseCycleState == null)
+    {
+        <MudText>Loading...</MudText>
+    }
+    else
+    {
+        @if (!_cycling)
+        {
+            <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="0">
+                @{
+                    (string smallCycle, string mediumCycle, string largeCycle) = GetCycleGroups();
+                }
+
+                <MudStack Row="true">
+                    <MudPaper Class="pa-2">
+                        <MudText Typo="Typo.caption">@smallCycle</MudText>
+                    </MudPaper>
+
+                    <MudPaper Class="pa-2">
+                        <MudText Typo="Typo.caption">@mediumCycle</MudText>
+                    </MudPaper>
+
+                    <MudPaper Class="pa-2">
+                        <MudText Typo="Typo.caption">@largeCycle</MudText>
+                    </MudPaper>
+                </MudStack>
+
+                @if (_eta.TotalSeconds < 0)
+                {
+                    <MudText Typo="Typo.caption">Computing...</MudText>
+                }
+                else
+                {
+                    <MudText Typo="Typo.caption">next cycle in : @_eta.Minutes.ToString("D2"):@_eta.Seconds.ToString("D2")</MudText>
+                }
+            </MudStack>
+        }
+        else
+        {
+            <MudText>Computing...</MudText>
+            @if (_cycleProgress == null)
+            {
+                <MudText>Waiting progress...</MudText>
+            }
+            else
+            {
+                <MudText>@_cycleProgress.Message (@_cycleProgress.CurrentStep / @_cycleProgress.TotalSteps) @_cycleProgress.StepProgress %</MudText>
+            }
+        }
+    }
+
+    @if (ApiAuth.IsAdmin && (MainLayout.UserSettings != null && MainLayout.UserSettings.IsDev))
+    {
+        <MudStack Class="mt-2" Justify="Justify.Center" AlignItems="AlignItems.Center" Spacing="0">
+            @if (_cycleIsPaused)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Warning">Cycle processing is paused</MudText>
+            }
+
+            <MudStack Row="true">
+                <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small" OnClick="OnClickForceNextCycle">Force next cycle</MudButton>
+
+                @if (_cycleIsPaused)
+                {
+                    <MudIconButton Size="Size.Small" Icon="@ResourceIcon.PLAY" OnClick="OnCallResumeCycle"></MudIconButton>
+                }
+                else
+                {
+                    <MudIconButton Size="Size.Small" Icon="@ResourceIcon.PAUSE" OnClick="OnCallPauseCycle"></MudIconButton>
+                }
+            </MudStack>
+        </MudStack>
+    }
+</MudPaper>
+
+@code{
+    public ResponseCycleState? ResponseCycleState;
+    private TimeSpan _eta;
+
+    private Timer? _timer;
+    private bool _refreshing;
+
+    /// <summary>
+    /// State between end and start
+    /// </summary>
+    private bool _cycling;
+
+    /// <summary>
+    /// Progress of the current cycle
+    /// </summary>
+    private ProgressInfo? _cycleProgress;
+
+    private bool _cycleIsPaused;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await ApiAuth.AwaitConnection();
+
+        CycleHubProvider.OnCycleEnded += OnCycleEnded;
+        CycleHubProvider.OnCycleStarted += OnCycleStarted;
+        CycleProcessHubProvider.OnCycleProcessProgress += OnCycleProcessProgress;
+
+        await RefreshCycleState();
+        _timer = new Timer(_ => ComputeEta(), null, 0, 1000);
+
+        if (MainLayout.UserSettings.IsDev && ApiAuth.IsAdmin)
+        {
+            _cycleIsPaused = await ApiManager.Client.GetCycleIsPausedAsync();
+        }
+    }
+
+    private void OnCycleProcessProgress(ProgressInfo progress)
+    {
+        _cycleProgress = progress;
+        StateHasChanged();
+    }
+
+    private async void OnCycleStarted()
+    {
+        await RefreshCycleState();
+        _cycling = false;
+        StateHasChanged();
+    }
+
+    private void OnCycleEnded()
+    {
+        _cycling = true;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        CycleHubProvider.OnCycleEnded -= OnCycleEnded;
+        CycleHubProvider.OnCycleStarted -= OnCycleStarted;
+        CycleProcessHubProvider.OnCycleProcessProgress -= OnCycleProcessProgress;
+
+        _timer?.Dispose();
+    }
+
+    private async Task RefreshCycleState()
+    {
+        _refreshing = true;
+
+        Log.Information($"[{nameof(BlockCycle)}] : refreshing cycle state");
+
+        ResponseCycleState = await ApiManager.Client.GetCycleStateAsync();
+
+        if (MainLayout.Instance != null)
+        {
+            MainLayout.Instance.SetCurrentCycle(ResponseCycleState);
+        }
+
+        _refreshing = false;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Compute the duration in minutes and seconds between the current time and the end of the cycle
+    /// </summary>
+    private async Task ComputeEta()
+    {
+        if (ResponseCycleState == null)
+        {
+            return;
+        }
+
+        DateTime currentCycle = DateTime.Now;
+        DateTime cycleEnd = ResponseCycleState.NextCycle;
+
+        _eta = cycleEnd - currentCycle;
+
+        if (_eta.TotalSeconds <= 0)
+        {
+            await RefreshCycleState();
+        }
+
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Split the result as 3 groups of 3 digits each
+    /// </summary>
+    /// <returns></returns>
+    private (string, string, string) GetCycleGroups()
+    {
+        if (ResponseCycleState == null)
+        {
+            return ("Loading...", "Loading...", "Loading...");
+        }
+
+        string cycleCount = ResponseCycleState.CycleCount.ToString();
+
+        // Make sure the cycleCount has at least 9 digits
+        while (cycleCount.Length < 9)
+        {
+            cycleCount = "0" + cycleCount;
+        }
+
+        string group1 = cycleCount.Substring(0, 3);
+        string group2 = cycleCount.Substring(3, 3);
+        string group3 = cycleCount.Substring(6, 3);
+
+        return (group1, group2, group3);
+    }
+
+    private async Task OnClickForceNextCycle()
+    {
+        //Confirm dialog
+        bool res = await MainLayout.Instance.DialogTemplates.OpenDialogConfirm(
+                                                                               subject: "Confirm force next cycle", title: "confirm next turn", type: DialogTemplate.EnumType.Warning, message: "Force skipping cycle need manual refresh from all users");
+
+        if (!res)
+        {
+            return;
+        }
+
+        try
+        {
+            ApiManager.Client.AdminForceNextCycleAsync();
+            Snackbar.Add("Cycle forced", Severity.Success);
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add("Error : " + e.Message, Severity.Error);
+        }
+    }
+
+    private async Task OnCallPauseCycle()
+    {
+        try
+        {
+            await ApiManager.Client.AdminPauseCycleAsync();
+            Snackbar.Add("Cycle paused", Severity.Success);
+            _cycleIsPaused = true;
+            StateHasChanged();
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add("Error : " + e.Message, Severity.Error);
+        }
+    }
+
+    private async Task OnCallResumeCycle()
+    {
+        try
+        {
+            await ApiManager.Client.AdminResumeCycleAsync();
+            Snackbar.Add("Cycle resumed", Severity.Success);
+            _cycleIsPaused = false;
+            StateHasChanged();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }
+
+}

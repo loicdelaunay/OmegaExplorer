@@ -1,0 +1,123 @@
+﻿@using OmegaExplorer.Client.Utilities.Extensions
+@using OmegaExplorer.Client.Utilities.Resources
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <Header Dialog="true" OnClose="@(() => MudDialog.Close())" Size="Size.Small" Title="Orders"
+                Subtitle="Placeholder" Icon="@ResourceIcon.DEBUG" DebugObject="_orders">
+        </Header>
+        <MudStack>
+            <MudTable Items="_orders" Hover="true" Breakpoint="Breakpoint.Sm" LoadingProgressColor="Color.Info">
+                <HeaderContent>
+                    <MudTh>Id</MudTh>
+                    <MudTh>Type</MudTh>
+                    <MudTh>Target</MudTh>
+                    <MudTh>Target Raw</MudTh>
+                    <MudTh>Target Spaceship Id</MudTh>
+                    <MudTh>Target Spaceship Name</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Nr">@context.Id</MudTd>
+                    <MudTd DataLabel="Sign">@context.Type</MudTd>
+                    <MudTd DataLabel="Name">@context.TargetRaw</MudTd>
+                    <MudTd DataLabel="Name">@context.TargetSpaceshipId</MudTd>
+                    <MudTd DataLabel="Name">@context.TargetSpaceship?.Name</MudTd>
+                    <MudTd DataLabel="Raw">@context.TargetLocation.ToStringFormated()</MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudStack Row="true">
+                            @if (MainLayout.UserSettings.IsDev)
+                            {
+                                <MudIconButtonWithLabel Icon="@ResourceIcon.DEBUG" Color="Color.Warning" OnClick="@(() => OnClickDebugOrder(context))"></MudIconButtonWithLabel>
+                            }
+                            <MudButton Color="Color.Error" Variant="Variant.Outlined" OnClick="@(() => OnClickRemoveOrder(context))">Cancel</MudButton>
+                        </MudStack>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code{
+
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public ResponseSpaceship? Spaceship { get; set; }
+
+    private List<ResponseOrder> _orders = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if(Spaceship == null)
+        {
+            Snackbar.Add("No spaceship provided", Severity.Error);
+            MudDialog.Cancel();
+        }
+        await base.OnInitializedAsync();
+        await Refresh();
+    }
+
+    async Task Refresh()
+    {
+        try
+        {
+            _orders = await ApiManager.Client.GetOrdersSpaceshipAsync(Spaceship.Id);
+
+            foreach (ResponseOrder order in _orders)
+            {
+                if (order is {TargetLocation: null})
+                {
+                    continue;
+                }
+
+                await order.TargetLocation.Feed();
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add("Error while refreshing orders", Severity.Error);
+            Console.WriteLine(e);
+        }
+    }
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task OnClickDebugOrder(ResponseOrder order)
+    {
+        MainLayout.Instance.DialogTemplates.OpenDialogDebug(order);
+    }
+
+    private async Task OnClickRemoveOrder(ResponseOrder order)
+    {
+        bool res = await MainLayout.Instance.DialogTemplates.OpenDialogConfirm("Remove order", "Are you sure you want to remove this order?");
+
+        if (res)
+        {
+            try
+            {
+                await ApiManager.Client.DeleteOrderByIdAsync(order.Id);
+                await Refresh();
+                Snackbar.Add("Order removed", Severity.Success);
+            }
+            catch (Exception e)
+            {
+                Snackbar.Add("Error while removing order", Severity.Error);
+                Console.WriteLine(e);
+            }
+        }
+    }
+
+}

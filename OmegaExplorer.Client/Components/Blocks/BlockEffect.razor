@@ -1,0 +1,102 @@
+﻿@using System.Text
+@inject ISnackbar Snackbar;
+
+<MudPaper Outlined="true" Class="background-color-dark pa-2">
+    <MudStack AlignItems="AlignItems.Center" Justify="Justify.FlexStart" Row="true">
+        <BlockEffectType EffectType="@Effect.Type"></BlockEffectType>
+        
+        <MudStack Spacing="0">
+            <MudStack Row="true" Spacing="0">
+                <MudText Style="font-size: small" Typo="Typo.subtitle1">@((MarkupString)GetCompleteEffectInString())</MudText>
+            </MudStack>
+            
+            @if (MainLayout.UserSettings.IsDev)
+            {
+                <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Warning" OnClick="OnClickDebug">Debug</MudButton>
+            }
+        </MudStack>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public ResponseEffect Effect { get; set; }
+
+    /// <summary>
+    /// Return the complete sentence
+    /// </summary>
+    /// <returns></returns>
+    private string GetCompleteEffectInString()
+    {
+        var res = new StringBuilder();
+
+        res.Append($"{GetTypeString()} for <b>{Effect.Value}</b> points");
+        res.Append($" on <b>{Effect.TargetType.ToString()}</b>");
+        
+        if(Effect.TargetType == EnumEffectTargetType.Spaceship)
+        {
+            if (Effect.ModuleTargetType == EnumEffectModuleTargetType.Select)
+            {
+                res.Append($" on {Effect.ModuleTargetCount} modules");
+            }else if (Effect.ModuleTargetType == EnumEffectModuleTargetType.Random)
+            {
+                res.Append($" on {Effect.ModuleTargetCount} modules randomly");
+            }else if (Effect.ModuleTargetType == EnumEffectModuleTargetType.All)
+            {
+                res.Append(" on all modules");
+            }
+        }
+
+        res.Append($" on <b>{GetTargetString()}</b>");
+        
+        return res.ToString();
+    }
+
+    private string GetTypeString()
+    {
+        switch (Effect.Type)
+        {
+            case EnumEffectType.Damage:
+                return "Damage";
+            case EnumEffectType.Undamage:
+                return "Repair";
+            case EnumEffectType.Colonization:
+                return "Colonize";
+            case EnumEffectType.Protect:
+                return "Protect";
+            default:
+                Snackbar.Add($"Unknown effect type : {Effect.Type}", Severity.Error);
+                return string.Empty;
+        }
+    }
+    
+    /// <summary>
+    /// Help humanize the target string
+    /// </summary>
+    /// <returns></returns>
+    private string GetTargetString()
+    {
+        switch (Effect.Target)
+        {
+            case EnumEffectTarget.Self:
+                return "yourself";
+            case EnumEffectTarget.Ally:
+                return "one ally";
+            case EnumEffectTarget.AllyMultiple:
+                return "all allies";
+            case EnumEffectTarget.Enemy:
+                return "one enemy";
+            case EnumEffectTarget.EnemyMultiple:
+                return "all enemies";
+            default:
+                Snackbar.Add($"Unknown effect type : {Effect.Type}", Severity.Error);
+                return string.Empty;
+        }
+    }
+
+    private void OnClickDebug()
+    {
+        MainLayout.Instance.DialogTemplates.OpenDialogDebug(Effect);
+    }
+
+}

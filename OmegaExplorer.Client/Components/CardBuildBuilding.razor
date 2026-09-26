@@ -1,0 +1,46 @@
+﻿@using OmegaExplorer.Client.Utilities.Resources
+<MudPaper Outlined="true" Height="400px" Width="250px">
+    <MudStack Justify="Justify.SpaceBetween">
+        <MudStack AlignItems="AlignItems.Center">
+            <MudImage Width="100" Src="@ResourceImage.GetImageBuilding(index: BuildingData.Index)"></MudImage>
+            <MudText>@BuildingData.Name</MudText>
+
+            <MudDivider></MudDivider>
+            <MudPaper Outlined="true" Class="ma-2 pa-2 w-80">
+                <MudText Class="mb-2" Typo="Typo.body2">Cost</MudText>
+                @foreach (ModifierResource? cost in BuildingData.Cost)
+                {
+                    <ChipModifier Modifier="cost"></ChipModifier>
+                }
+            </MudPaper>
+
+            <MudPaper Outlined="true" Class="ma-2 pa-2 w-80">
+                <MudText  Class="mb-2" Typo="Typo.body2">Modifier</MudText>
+                @foreach (ModifierResource? modifier in BuildingData.Modifiers)
+                {
+                    <ChipModifier Modifier="modifier"></ChipModifier>
+                }
+            </MudPaper>
+
+        </MudStack>
+
+        <MudStack AlignItems="AlignItems.Center">
+            <MudButton OnClick="CallOnClick" Variant="Variant.Filled" Color="Color.Primary">Select</MudButton>
+        </MudStack>
+    </MudStack>
+</MudPaper>
+
+@code {
+
+    [Parameter]
+    public IDynamicItemBuilding BuildingData { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<IDynamicItemBuilding> OnClick { get; set; }
+
+    private async void CallOnClick()
+    {
+        await OnClick.InvokeAsync(arg: BuildingData);
+    }
+
+}

@@ -1,0 +1,716 @@
+﻿@using Blazor.Diagrams.Core.Geometry
+@using Blazor.Diagrams.Core.Models
+@using OmegaExplorer.Client.Components.Diagram.Nodes
+@using OmegaExplorer.Client.Components.Diagram.Nodes.Models
+@using OmegaExplorer.Client.Models
+@using OmegaExplorer.Client.Models.Card.Definition
+@using OmegaExplorer.Client.Services
+@using OmegaExplorer.Client.Utilities.Extensions
+@using Position = OmegaExplorer.Client.Enums.Position
+
+@using Size = MudBlazor.Size
+@using Serilog
+@using OmegaExplorer.Client.Utilities.Resources
+
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject JavascriptProvider JavascriptProvider
+@inject NavigationManager NavigationManager
+
+@if (Blueprint == null)
+{
+    <MudText>Blueprint not selected</MudText>
+}
+else
+{
+    <MudCard Class="@GetCardContainerClasses()">
+        <MudStack Class="pa-2" Spacing="2">
+            @if (Spaceship != null)
+            {
+                <MudCard Outlined="true" Class="pa-2">
+                    <MudText Typo="Typo.subtitle1"><b>@Spaceship.Name</b></MudText>
+                </MudCard>
+            }
+
+            @*Toolbar for spaceship*@
+            <MudCard Outlined="true" Class="pa-2">
+                <MudStack AlignItems="AlignItems.Center" Row="true">
+                    <MudSwitchM3 Size="Size.Small" Color="Color.Primary" Label="Auto Center" @bind-Value="AutoCenter"></MudSwitchM3>
+                    <MudIconButtonWithLabel Color="Color.Primary" Label="Fit" Icon="@ResourceIcon.FIT"
+                                            OnClick="FitZoom" Size="Size.Small"></MudIconButtonWithLabel>
+
+                    <MudDivider Vertical="true" Class="px-2"></MudDivider>
+
+                    <MudIconButtonWithLabel Color="Color.Primary" Label="Enable radar" Icon="@ResourceIcon.RADAR"
+                                            OnClick="ToggleRadar" Size="Size.Small"></MudIconButtonWithLabel>
+                    <MudIconButtonWithLabel Color="Color.Primary" Label="See" Icon="@ResourceIcon.SEE"
+                                            OnClick="See" Size="Size.Small"></MudIconButtonWithLabel>
+                    @if (MainLayout.UserSettings.IsDev)
+                    {
+                        <MudIconButtonWithLabel Color="Color.Warning" Label="Debug" Icon="@ResourceIcon.DEBUG"
+                                                OnClick="Debug" Size="Size.Small"></MudIconButtonWithLabel>
+                    }
+                </MudStack>
+            </MudCard>
+
+            @*Designer helper*@
+            <MudStack>
+                @if (!HaveCockpit())
+                {
+                    <MudAlert Severity="Severity.Error">Please add a cockpit</MudAlert>
+                }
+
+                @if (!HaveReactor())
+                {
+                    <MudAlert Severity="Severity.Error">Please add a reactor</MudAlert>
+                }
+            </MudStack>
+
+            @*Stats*@
+            @if (Blueprint != null)
+            {
+                <MudPaper Outlined Class="pa-2">
+                    <MudStack>
+                    @*Stats bars*@
+                    <MudGrid>
+                        <MudItem xs="12" md="6" lg="4">
+                            <MudProgressLinear Style="height: 40px" Rounded="true" Color="Color.Success" Size="Size.Large" Value="@TotalHealth()" Max="@TotalHealthMax()">
+                                <MudText Typo="Typo.subtitle1" Color="Color.Dark">
+                                    <b>Health : @TotalHealth()/@TotalHealthMax()</b>
+                                </MudText>
+                            </MudProgressLinear>
+                        </MudItem>
+                        <MudItem xs="12" md="6" lg="4">
+                            <MudProgressLinear Style="height: 40px" Rounded="true" Color="Color.Info" Size="Size.Large" Value="100">
+                                <MudText Typo="Typo.subtitle1" Color="Color.Dark">
+                                    <b>Shield work in progress</b>
+                                </MudText>
+                            </MudProgressLinear>
+                        </MudItem>
+                        <MudItem xs="12" md="6" lg="4">
+                            <MudProgressLinear Style="height: 40px" Rounded="true" Color="Color.Default" Size="Size.Large" Value="100">
+                                <MudText Typo="Typo.subtitle1" Color="Color.Dark">
+                                    <b>Armor work in progress</b>
+                                </MudText>
+                            </MudProgressLinear>
+                        </MudItem>
+                    </MudGrid>
+
+                    @*Stats details*@
+                    <MudGrid>
+
+                        <MudItem xs="3">
+                            <MudPaper Class="pa-3">
+                                <MudStack Row>
+                                    <MudIcon Icon="@ResourceIcon.SIZE"></MudIcon>
+                                    <MudText>Size : @Blueprint.Size</MudText>
+                                </MudStack>
+                            </MudPaper>
+                        </MudItem>
+
+                        <MudItem xs="3">
+                            <MudPaper Class="pa-3">
+                                <MudStack Row>
+                                    <MudIcon Icon="@ResourceIcon.SPEED"></MudIcon>
+                                    <MudText>Velocity : @Spaceship?.SpeedInStarCluster / @Spaceship?.SpeedInGalaxy / @Spaceship?.SpeedInUniverse</MudText>
+                                </MudStack>
+                            </MudPaper>
+                        </MudItem>
+
+                        <MudItem xs="3">
+                            <MudPaper Class="pa-3">
+                                <MudStack Row>
+                                    <MudIcon Icon="@ResourceIcon.ACTIONS"></MudIcon>
+                                    <MudText>Actions : 3</MudText>
+                                </MudStack>
+                            </MudPaper>
+                        </MudItem>
+
+                        <MudItem xs="3">
+                            <MudPaper Class="pa-3">
+                                <MudStack Row>
+                                    <MudIcon Icon="@ResourceIcon.MODULE"></MudIcon>
+                                    <MudText>Modules @Blueprint.Modules?.Count / @_maxModuleCount</MudText>
+                                </MudStack>
+                            </MudPaper>
+                        </MudItem>
+
+                    </MudGrid>
+                    </MudStack>
+                </MudPaper>
+            }
+
+            @if (CanSelectSpaceship)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnClick">Select</MudButton>
+            }
+
+            <MudGrid>
+                @*Diagram*@
+                <MudItem xs="12" md="8">
+                    <div onmouseleave="@(OnMouseLeave)" style="@GetStyleDiagramContainer()" class="diagram-container">
+                        <CascadingValue Value="_diagram" IsFixed="true">
+                            <DiagramCanvas @ref="_canvas">
+                                <Widgets>
+                                    @if (RadarVisible)
+                                    {
+                                        <NavigatorWidget Width="200" Height="120"
+                                                         Class="border border-black bg-white absolute"
+                                                         Style="bottom: 15px; right: 15px;"/>
+                                    }
+                                </Widgets>
+                            </DiagramCanvas>
+                        </CascadingValue>
+                    </div>
+                </MudItem>
+
+                @*Skill*@
+                <MudItem xs="12" md="4" Class="overflow-auto" Style="max-height: 65vh !important;">
+                    <MudStack>
+                        <MudText Typo="Typo.h4" Class="mb-2">Skills</MudText>
+
+                        @foreach (ResponseSpaceshipModule? moduleWithSkills in Blueprint.Modules.Where(module => module.Data.Skills.Any()))
+                        {
+                            <BlockListSkills @ref="_blockListSkills" Module="moduleWithSkills"
+                                             CanSelectSkill="@CanSelectSkill"
+                                             OnSkillClicked="OnSkillClick"></BlockListSkills>
+                        }
+                    </MudStack>
+                </MudItem>
+
+            </MudGrid>
+        </MudStack>
+    </MudCard>
+}
+
+@code {
+    private const int X_MODULE_SIZE = 300;
+    private const int Y_MODULE_SIZE = 200;
+
+    private const int X_MODULE_ADD_SIZE = 50;
+    private const int Y_MODULE_ADD_SIZE = 50;
+
+    private const int XOFFSET = -302;
+    private const int YOFFSET = -202;
+
+    private const int XOFFSET_ADD = -177;
+    private const int YOFFSET_ADD = 50;
+
+    private BlazorDiagram? _diagram = null!;
+    private DiagramCanvas? _canvas = null!;
+    private BlockListSkills _blockListSkills = null!;
+    private int _maxModuleCount = 0;
+
+
+    // Current selected blueprint spaceship
+    [Parameter]
+    public ResponseBlueprintSpaceship? Blueprint { get; set; }
+
+    [Parameter]
+    public ResponseSpaceship? Spaceship { get; set; }
+
+    [Parameter]
+    public bool IsReadOnly { get; set; }
+
+    [Parameter]
+    public string Height { get; set; } = "65vh";
+
+    [Parameter]
+    public bool AutoCenter { get; set; } = true;
+
+    [Parameter]
+    public EventCallback<SpaceshipSkillUse> OnSkillClicked { get; set; }
+
+    [Parameter]
+    public EventCallback<ResponseSpaceship> OnClicked { get; set; }
+
+    [Parameter]
+    public bool CanSelectSkill { get; set; }
+
+    [Parameter]
+    public bool CanSelectSpaceship { get; set; }
+
+    [Parameter]
+    public bool Reverse { get; set; }
+
+    [Parameter]
+    public bool RadarVisible { get; set; } = true;
+
+    private Dictionary<ResponseSpaceshipModule, List<ResponseDynamicItemSpaceshipSkill>> _skillsByModules = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ApiAuth.AwaitConnection();
+
+        try
+        {
+            BlazorDiagramOptions options = new()
+            {
+                AllowMultiSelection = false,
+                Zoom =
+                {
+                    Enabled = true,
+                    Inverse = true
+                },
+                GridSnapToCenter = true,
+                Virtualization = {Enabled = true},
+                Links =
+                {
+                    DefaultRouter = new NormalRouter(),
+                    DefaultPathGenerator = new SmoothPathGenerator(),
+                    DefaultColor = "rgb(0, 121, 107)"
+                }
+            };
+
+            _diagram = new BlazorDiagram(options);
+            _diagram.RegisterComponent<NodeModelSpaceshipModule
+                , NodeSpaceshipModule>();
+
+            _diagram.RegisterComponent<NodeModelSpaceshipModuleAdd
+                , NodeSpaceshipModuleAdd>();
+
+            GetMaxModuleCount();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        JavascriptProvider.DiagramExtensionEnable();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Log.Logger.Information($"[{nameof(BlockSpaceship)}] : parameter changed, updating spaceship blueprint visual");
+
+        try
+        {
+            await UpdateSpaceshipVisual();
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add("Error: " + e.Message, Severity.Error);
+            Log.Logger.Error(e, "Error while updating spaceship visual");
+            throw;
+        }
+
+        Log.Logger.Information($"[{nameof(BlockSpaceship)}] : spaceship blueprint visual updated ! ");
+
+        await base.OnParametersSetAsync();
+    }
+
+    private void OnMouseLeave()
+    {
+        _diagram.UnselectAll();
+    }
+
+    private void AddAddModule(int x, int y, Point? position = null)
+    {
+        if (IsReadOnly)
+        {
+            return;
+        }
+
+        if (position == null)
+        {
+            position = new Point(XOFFSET_ADD * x, YOFFSET_ADD * y);
+        }
+
+        NodeModelSpaceshipModuleAdd nodeAdd = _diagram.Nodes.Add(new NodeModelSpaceshipModuleAdd
+        {
+            X = x,
+            Y = y,
+            Position = position,
+            Locked = true,
+            IsReadOnly = IsReadOnly
+        });
+
+        nodeAdd.OnClicked += () => { OnClickAddModule(nodeAdd.X, nodeAdd.Y); };
+    }
+
+    private string GetCardContainerClasses()
+    {
+        string res = "pa-2";
+
+        if (CanSelectSpaceship)
+        {
+            res += " hoverable";
+        }
+
+        return res;
+    }
+
+    private void RemoveAddModule(int x, int y)
+    {
+        @if (IsReadOnly)
+        {
+            return;
+        }
+
+        IEnumerable<NodeModelSpaceshipModuleAdd> nodeAddModels = _diagram.Nodes.Where(node => node is NodeModelSpaceshipModuleAdd).Cast<NodeModelSpaceshipModuleAdd>();
+        NodeModelSpaceshipModuleAdd? nodeToRemove = nodeAddModels.FirstOrDefault(node => node.X == x && node.Y == y);
+
+        if (nodeToRemove == null)
+        {
+            Snackbar.Add("No add module found at " + x + ":" + y, Severity.Warning);
+            return;
+        }
+
+        //Need to remove the add module with X & Y because remove nodeToRemove not
+        //work with Diagram.Nodes.Remove(nodeToRemove) not the same class so not equals
+        NodeModel? toRemove = _diagram.Nodes.FirstOrDefault(node => node.Position.X == nodeToRemove.Position.X && node.Position.Y == nodeToRemove.Position.Y);
+
+        if (toRemove == null)
+        {
+            Snackbar.Add("No add module found after find element at " + x + ":" + y, Severity.Warning);
+            return;
+        }
+
+        _diagram.Nodes.Remove(toRemove);
+    }
+
+    private bool ExistAddModule(int x, int y)
+    {
+        IEnumerable<NodeModelSpaceshipModuleAdd> nodeAddModels = _diagram.Nodes.Where(node => node is NodeModelSpaceshipModuleAdd).Cast<NodeModelSpaceshipModuleAdd>();
+        bool nodeExist = nodeAddModels.Any(node => node.X == x && node.Y == y);
+
+        return nodeExist;
+    }
+
+    private const double TOLERANCE = 1;
+
+    #region Manage Diagram visual
+
+    public async Task UpdateSpaceshipVisual(bool clear = true)
+    {
+        ClearSpaceshipVisual();
+
+        if (Blueprint == null)
+        {
+            Log.Logger.Information($"[{nameof(BlockSpaceship)}] : No blueprint selected, nothing to display");
+            return;
+        }
+
+        _skillsByModules.Clear();
+
+        //If nothing create add button to select cockpit
+        if (Blueprint.Modules?.Count == 0)
+        {
+            AddAddModule(0, 0);
+
+            StateHasChanged();
+            return;
+        }
+
+        List<ResponseSpaceshipModule>? modules = Blueprint.Modules;
+
+        foreach (ResponseSpaceshipModule module in modules)
+        {
+            int x = module.X;
+
+            if (Reverse)
+            {
+                x = -module.X;
+            }
+
+            Point position = new(x * XOFFSET, module.Y * YOFFSET);
+
+            NodeModelSpaceshipModule node = _diagram.Nodes.Add(new NodeModelSpaceshipModule(module)
+            {
+                IsReverse = Reverse,
+                IsReadOnly = IsReadOnly,
+                Position = position,
+                Locked = true,
+                Spaceship = Spaceship
+            });
+
+            node.OnDeleted += OnClickDeleteModule;
+
+            @if (!IsReadOnly)
+            {
+                if (!module.IsModuleNextTo(modules, Position.Left))
+                {
+                    int xBlueprintPosition = module.X + 1;
+                    int yBlueprintPosition = module.Y;
+
+                    if (ExistAddModule(xBlueprintPosition, Y_MODULE_ADD_SIZE))
+                    {
+                        return;
+                    }
+
+                    Point diagramPosition = new(module.X * XOFFSET + XOFFSET_ADD, module.Y * YOFFSET + YOFFSET_ADD);
+                    AddAddModule(xBlueprintPosition, yBlueprintPosition, diagramPosition);
+                }
+
+                if (!module.IsModuleNextTo(modules, Position.Top))
+                {
+                    NodeModelSpaceshipModuleAdd nodeAddTop = _diagram.Nodes.Add(new NodeModelSpaceshipModuleAdd
+                    {
+                        X = module.X,
+                        Y = module.Y + 1,
+                        Position = new Point(module.X * XOFFSET - X_MODULE_ADD_SIZE / 2 + X_MODULE_SIZE / 2, (module.Y + 1) * YOFFSET + YOFFSET_ADD),
+                        Locked = true
+                    });
+
+                    nodeAddTop.OnClicked += () => { OnClickAddModule(module.X, module.Y + 1); };
+                }
+            }
+        }
+
+        _skillsByModules = Blueprint.Modules
+                                    .Where(module => module.Data.Skills.Any())
+                                    .ToDictionary(
+                                                  module => module,
+                                                  module => module.Data.Skills);
+
+        await InvokeAsync(StateHasChanged);
+
+        if (AutoCenter)
+        {
+            await Task.Delay(1);
+            FitZoom();
+        }
+    }
+
+    private async void OnClickDeleteModule(ResponseSpaceshipModule moduleToDelete)
+    {
+        @if (IsReadOnly)
+        {
+            return;
+        }
+
+        if (!await MainLayout.Instance.DialogTemplates.OpenDialogConfirm($"module {moduleToDelete.Name}"))
+        {
+            return;
+        }
+
+        Blueprint.Modules.RemoveAll(module => module.X == moduleToDelete.X && module.Y == moduleToDelete.Y);
+        UpdateSpaceshipVisual();
+    }
+
+    private async void ClearSpaceshipVisual()
+    {
+        _diagram.Nodes.Clear();
+    }
+
+    #endregion
+
+    private void OnClickDebug()
+    {
+        MainLayout.Instance.DialogTemplates.OpenDialogDebug(Blueprint);
+    }
+
+    private async Task OnClickAddModule(int x, int y)
+    {
+        @if (IsReadOnly)
+        {
+            return;
+        }
+
+        // Check if max module count is reached
+        if (Blueprint != null && Blueprint.Modules.Count >= _maxModuleCount)
+        {
+            Snackbar.Add("Can't add new module maximum reached", Severity.Warning);
+            return;
+        }
+
+        ResponseDynamicItemSpaceshipModule? moduleDataPicked = await MainLayout.Instance.DialogTemplates.OpenPicker<CardDefinitionSpaceshipModuleData, ResponseDynamicItemSpaceshipModule>();
+
+        if (moduleDataPicked != null)
+        {
+            try
+            {
+                //Rewrite position
+                moduleDataPicked.X = x;
+                moduleDataPicked.Y = y;
+
+                ResponseSpaceshipModule module = moduleDataPicked.ToSpaceshipModule();
+
+                Blueprint.Modules.Add(module);
+
+                RemoveAddModule(x, y);
+            }
+            catch (Exception e)
+            {
+                Snackbar.Add("Error: " + e.Message, Severity.Error);
+            }
+
+            UpdateSpaceshipVisual();
+        }
+        else
+        {
+            Snackbar.Add("Data picked is null", Severity.Error);
+        }
+    }
+
+    private string GetStyleDiagramContainer()
+    {
+        return $"height: {Height};";
+    }
+
+    private void FitZoom()
+    {
+        try
+        {
+            if (_diagram == null)
+            {
+                Log.Logger.Warning($"[{nameof(BlockSpaceship)}] : diagram is null, cannot auto center");
+                return;
+            }
+
+            Log.Logger.Information($"[{nameof(BlockSpaceship)}] : auto centering diagram");
+            _diagram.ZoomToFit(50);
+        }
+        catch (Exception e)
+        {
+            Log.Logger.Error(e, $"[{nameof(BlockSpaceship)}] : error while auto centering diagram");
+        }
+    }
+
+    private void OnSkillClick(ResponseDynamicItemSpaceshipSkill skill)
+    {
+        if (Spaceship == null)
+        {
+            Log.Logger.Warning($"[{nameof(BlockSpaceship)}] : Spaceship is null, cannot use skill");
+            return;
+        }
+
+        SpaceshipSkillUse skillUse = new()
+        {
+            Skill = skill,
+            Spaceship = Spaceship
+        };
+
+        OnSkillClicked.InvokeAsync(skillUse);
+    }
+
+    private void OnClick()
+    {
+        if (!CanSelectSpaceship)
+        {
+            return;
+        }
+
+        if (Spaceship == null)
+        {
+            Log.Logger.Warning($"[{nameof(BlockSpaceship)}] : Spaceship is null, cannot select");
+            return;
+        }
+
+        OnClicked.InvokeAsync(Spaceship);
+    }
+
+    private void ToggleRadar()
+    {
+        RadarVisible = !RadarVisible;
+        _diagram.Refresh();
+        StateHasChanged();
+    }
+
+    private float TotalHealth()
+    {
+        if (Spaceship == null)
+        {
+            return 0;
+        }
+
+        return Spaceship.Modules.Sum(module => module.Health);
+    }
+
+    private float TotalHealthMax()
+    {
+        if (Blueprint == null)
+        {
+            return 0;
+        }
+
+        return Blueprint.Modules.Count * 100;
+    }
+
+    private void See()
+    {
+        if (Spaceship != null)
+        {
+            NavigationManager.NavigateTo($"/spaceship/{Spaceship.Id}");
+        }
+    }
+
+    private async Task Debug()
+    {
+        MainLayout.Instance.DialogTemplates.OpenDialogDebug(this);
+    }
+
+    /// <summary>
+    /// Check if the spaceship is valid
+    /// </summary>
+    /// <returns>String empty if no error else returning error</returns>
+    public string IsValid()
+    {
+        if (!HaveCockpit())
+        {
+            return "No cockpit found";
+        }
+
+        if (!HaveReactor())
+        {
+            return "No reactor found";
+        }
+
+        return string.Empty;
+    }
+
+    /// <summary>
+    /// For blueprint only
+    /// </summary>
+    public async Task SetSize(SpaceshipSize size)
+    {
+        Blueprint.Size = size;
+        await GetMaxModuleCount();
+
+        StateHasChanged();
+    }
+
+    public async Task<int> GetMaxModuleCount()
+    {
+        SpaceshipSize searchBySize = SpaceshipSize.Cruiser;
+
+        if (Blueprint != null)
+        {
+            searchBySize = Blueprint.Size;
+        }
+
+        int maxModuleCount = await ApiManager.Client.GetMaxModuleCountBySizeAsync(searchBySize);
+        _maxModuleCount = maxModuleCount;
+        StateHasChanged();
+
+        return maxModuleCount;
+    }
+
+
+    private bool HaveCockpit()
+    {
+        if (Blueprint == null)
+        {
+            return false;
+        }
+
+        bool haveCockpit = Blueprint.Modules.Any(module => module.Data.Type == EnumSpaceshipModuleType.Cockpit);
+        return haveCockpit;
+    }
+
+    private bool HaveReactor()
+    {
+        if (Blueprint == null)
+        {
+            return false;
+        }
+
+        bool haveReactor = Blueprint.Modules.Any(module => module.Data.Type == EnumSpaceshipModuleType.Reactor);
+        return haveReactor;
+    }
+
+}

@@ -1,0 +1,66 @@
+﻿@using OmegaExplorer.Client.Utilities.Resources
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudDialog DefaultFocus="DefaultFocus.FirstChild">
+    <DialogContent>
+        <Header Icon="@ResourceIcon.AUTH" Size="Size.Small" Title="Account" Subtitle="Connect to your account"></Header>
+
+        @if (!_loading)
+        {
+            <MudPaper Class="background-color-dark mb-2 mt-1 pa-2" Outlined="true">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.caption">Connected as : @ApiAuth.UserConnected!.Name</MudText>
+                    <MudText Typo="Typo.caption">Access level is : @ApiAuth.UserConnected!.AccessLevel</MudText>
+                </MudStack>
+            </MudPaper>
+
+            <MudStack>
+                <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" OnClick="@OpenUpdatePasswordDialog">Change password</MudButton>
+            </MudStack>
+        }
+        else
+        {
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary"></MudProgressCircular>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Close</MudButton>
+
+        <MudFocusTrap>
+            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@Disconnect">Disconnect</MudButton>
+        </MudFocusTrap>
+    </DialogActions>
+</MudDialog>
+
+@code{
+
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; }
+
+    bool _loading;
+    bool isShow;
+    bool _remember;
+
+    InputType PasswordInput = InputType.Password;
+    string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    async void OpenUpdatePasswordDialog()
+    {
+        DialogOptions options = new DialogOptions {CloseOnEscapeKey = true};
+        IDialogReference dialog = await DialogService.ShowAsync<DialogUpdateUserPassword>("Update user password", options);
+        DialogResult? result = await dialog.Result;
+    }
+
+    private void Disconnect()
+    {
+        ApiAuth.Disconnect();
+        MudDialog.Close();
+    }
+
+}

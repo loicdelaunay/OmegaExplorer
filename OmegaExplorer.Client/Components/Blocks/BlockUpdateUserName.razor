@@ -1,0 +1,65 @@
+﻿@using OmegaExplorer.Client.Pages
+@using OmegaExplorer.Client.Utilities.Extensions
+@using Serilog
+
+@inject ISnackbar Snackbar;
+@inject NavigationManager NavigationManager;
+
+    <MudStack>
+        <MudTextField Immediate="true" @bind-Value="_proxyUserName" Variant="Variant.Outlined" Label="Username"
+                      Required="true" Class="textfield-important"/>
+        <MudButton OnClick="CheckUsername">Check username</MudButton>
+
+        <MudButton Variant="Variant.Filled" Disabled="@(!_isValid)" OnClick="SelectUserName">Select this user name</MudButton>
+    </MudStack>
+
+@code {
+    private string _proxyUserName;
+    private string _userName;
+
+    private bool _isValid;
+
+    private async void CheckUsername()
+    {
+        try
+        {
+            bool exist = await ApiManager.Client.CheckNameExistAsync(_proxyUserName);
+
+            _userName = string.Empty;
+            _isValid = false;
+
+            if (exist)
+            {
+                Snackbar.Add("Name already taken", Severity.Error);
+                return;
+            }
+
+            _userName = _proxyUserName;
+            _isValid = true;
+
+            Snackbar.Add("Name is available", Severity.Success);
+            StateHasChanged();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            Snackbar.Add("Not able to check username", Severity.Error);
+        }
+    }
+
+    private async Task SelectUserName()
+    {
+        try
+        {
+            await ApiManager.Client.UpdateUserNameAsync(_userName);
+            Snackbar.Add("Username updated", Severity.Success);
+            NavigationManager.NavigateToPage<PageHome>();
+        }
+        catch (Exception e)
+        {
+            Log.Logger.Error(e, "Error while select user name");
+            Snackbar.Add($"Not able to update username : {e.Message}", Severity.Error);
+        }
+    }
+
+}

@@ -1,0 +1,29 @@
+﻿@using OmegaExplorer.Client.Utilities.Resources
+<MudCard Class="pa-2">
+    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Row="true">
+        <MudIcon Size="Size.Large" Icon="@GetIcon()" Color="@GetColor()" Style="font-size: 4rem"></MudIcon>
+        <MudText Color="@GetColor()" Typo="Typo.h1" Class="text-victory"><b>@GetText()</b></MudText>
+    </MudStack>
+</MudCard>
+
+@code {
+    [Parameter]
+    public bool IsVictory { get; set; }
+
+    private string GetText()
+    {
+        return IsVictory ? "Victory" : "Defeat";
+    }
+
+
+    private Color GetColor()
+    {
+        return IsVictory ? Color.Success : Color.Error;
+    }
+
+    private string GetIcon()
+    {
+        return IsVictory ? ResourceIcon.VICTORY : ResourceIcon.DEFEAT;
+    }
+
+}

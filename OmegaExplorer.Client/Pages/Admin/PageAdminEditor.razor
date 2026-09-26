@@ -1,0 +1,119 @@
+﻿@page "/admin/editor"
+@using OmegaExplorer.Server.Extensions
+@inject ISnackbar SnackBar;
+
+<CheckConnection></CheckConnection>
+<Header Title="Administration editor" Subtitle="Manage dynamic resource into the server"></Header>
+
+<MudGrid>
+    <!-- Dynamic folder -->
+    <MudItem xs="12" md="6" lg="2">
+        <MudTreeView MaxHeight="200" Dense="true" SelectedValueChanged="OnDynamicFolderSelectedChanged" Hover="true" T="ResponseDirectoryInfo">
+            @foreach (ResponseDirectoryInfo folder in _dynamicFolders)
+            {
+                <MudTreeViewItem Selected="@(folder.Name == _dynamicFolderSelected?.Name)" Value="@folder" Text="@folder.Name"></MudTreeViewItem>
+            }
+        </MudTreeView>
+    </MudItem>
+
+    <!-- Dynamic file -->
+    <MudItem xs="12" md="6" lg="2">
+        <MudTreeView MaxHeight="200" Dense="true" SelectedValueChanged="OnDynamicFileSelectedChanged" Hover="true" T="ResponseFileInfo">
+            @foreach (ResponseFileInfo file in _filesFromDynamicFolder)
+            {
+                <MudTreeViewItem Value="@file" Text="@(file.FullName.GetRelativeOtherString(_dynamicFolderSelected.FullName))"></MudTreeViewItem>
+            }
+        </MudTreeView>
+    </MudItem>
+
+    <!-- Editor -->
+    <MudItem xs="12" md="12" lg="8">
+        <MudStack>
+            <MudSelectFromEnum Label="Editor mode" @bind-Value="_editorMode"></MudSelectFromEnum>
+
+            <span hidden="@(_editorMode != EditorMode.Raw)">
+                <TextEditor @ref="_textEditor"></TextEditor>
+
+            </span>
+
+            <span hidden="@(_editorMode != EditorMode.Smart)">
+                <DynamicEditor @ref="_dynamicEditor"></DynamicEditor>
+            </span>
+        </MudStack>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<ResponseDirectoryInfo> _dynamicFolders = new();
+    private ResponseDirectoryInfo _dynamicFolderSelected;
+
+    private List<ResponseFileInfo> _filesFromDynamicFolder = new();
+    private ResponseFileInfo _dynamicFileSelected;
+
+    private TextEditor _textEditor;
+    private DynamicEditor _dynamicEditor;
+    private EditorMode _editorMode = EditorMode.Raw;
+
+    private enum EditorMode
+    {
+        Raw,
+        Smart
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        UpdateDynamicFolders();
+    }
+
+    private async void UpdateDynamicFolders()
+    {
+        _dynamicFolders = await ApiManager.Client.GetDynamicFoldersAsync();
+        StateHasChanged();
+    }
+
+    private async void LoadFilesFromDynamicFolder()
+    {
+        try
+        {
+            _filesFromDynamicFolder = await ApiManager.Client.GetFilesFromDynamicFolderAsync(_dynamicFolderSelected.Name);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            SnackBar.Add($"Error : {e.Message}", Severity.Error);
+        }
+
+        StateHasChanged();
+    }
+
+    private async void LoadFileFromDynamicFolder()
+    {
+        try
+        {
+            _dynamicFileSelected = await ApiManager.Client.GetFileFromDynamicFolderAsync(_dynamicFolderSelected.Name, _dynamicFileSelected.Name);
+            _textEditor?.SetData(_dynamicFileSelected.Data);
+            _dynamicEditor?.SetData(_dynamicFileSelected.Data);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            SnackBar.Add($"Error : {e.Message}", Severity.Error);
+        }
+
+        StateHasChanged();
+    }
+
+    private void OnDynamicFolderSelectedChanged(ResponseDirectoryInfo value)
+    {
+        _dynamicFolderSelected = value;
+        LoadFilesFromDynamicFolder();
+    }
+
+    private void OnDynamicFileSelectedChanged(ResponseFileInfo value)
+    {
+        _dynamicFileSelected = value;
+        LoadFileFromDynamicFolder();
+    }
+
+}

@@ -1,0 +1,48 @@
+﻿@using OmegaExplorer.Client.Utilities.Resources
+
+<ChipIconValue Value="@GetAmount()" Icon="@GetResourceImage()"></ChipIconValue>
+
+@code {
+
+    [Parameter] 
+    public ResponseGameResource? GameResource { get; set; }
+    
+    [Parameter] 
+    public int? Index { get; set; }
+    
+    [Parameter]
+    public int? Amount { get; set; }
+
+    private string GetResourceImage()
+    {
+        string path = ResourceImage.UNKNOWN_RESOURCE;
+        
+        if (GameResource != null)
+        {
+            path = ResourceImage.GetImageGameResource(index: GameResource.Index);
+        }
+        else if(Index != null)
+        {
+            path = ResourceImage.GetImageGameResource(index: (int) Index);
+        }
+        
+        return path;
+    }
+
+    private int? GetAmount()
+    {
+        int res = 0;
+        
+        if(GameResource != null)
+        {
+            res = GameResource.Amount;
+        }
+        else
+        {
+            res = (int) Amount;
+        }
+
+        return res;
+    }
+
+}

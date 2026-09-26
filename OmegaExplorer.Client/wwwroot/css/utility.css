@@ -1,0 +1,110 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+.w-100{
+    width: 100%;
+}
+
+.w-90 {
+    width: 90%;
+}
+
+.w-80 {
+    width: 80%;
+}
+
+.h-100 {
+    height: 100% !important;
+}
+
+.border-16 {
+    border-width: 16px !important;
+}
+
+.border-24 {
+    border-width: 24px !important;
+}
+
+.border-color-success {
+    border-color: var(--mud-palette-success) !important;
+}
+
+.hoverable {
+    outline: 1px solid var(--mud-palette-lines-default);
+    transition: color .4s, outline-color .4s ease-out, background-color .7s ease-out;
+}
+
+.hoverable:hover {
+    outline: 2px solid var(--mud-palette-primary);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    transition: color .4s, outline-color .4s ease-out, background-color .7s ease-out;
+    z-index: 1000;
+    cursor: pointer;
+}
+
+.background-color-dark{
+    background-color: var(--mud-palette-background-grey) !important;
+}
+
+.image-antialiasing-pixel{
+    image-rendering: pixelated;
+}
+
+.image-fill{
+    object-fit: fill;
+}
+
+.force-center-pivot{
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+}
+
+.color-on-surface{
+    color: var(--mud-palette-surface) !important;
+}
+
+.color-white{
+    color: #e4e4e4 !important;
+}
+
+.o-50{
+    opacity: 0.5 !important;
+}
+
+.o-75{
+    opacity: 0.75 !important;
+}
+
+.o-90{
+    opacity: 0.9 !important;
+}
+
+.o-100{
+    opacity: 1 !important;
+}
+
+.multiline {
+    display: -webkit-box; /* Enable flexbox layout for the element */
+    -webkit-line-clamp: 3; /* Limit text to 3 lines */
+    -webkit-box-orient: vertical; /* Set the box orientation to vertical */
+    overflow: hidden; /* Hide the overflow text */
+}
+
+.textfield-important {
+    position: relative;
+    z-index: 1;
+    animation: important-glow 2s infinite alternate;
+    border-radius: 6px; /* Assure que la lueur suit les coins arrondis */
+}
+
+@keyframes important-glow {
+    0% {
+        box-shadow: 0 0 8px rgba(var(--mud-palette-primary-rgb), 0.6),
+        0 0 16px rgba(var(--mud-palette-secondary-rgb), 0.4);
+    }
+    100% {
+        box-shadow: 0 0 16px rgba(var(--mud-palette-primary-rgb), 0.8),
+        0 0 32px rgba(var(--mud-palette-secondary-rgb), 0.6);
+    }
+}

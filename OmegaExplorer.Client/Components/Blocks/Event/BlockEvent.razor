@@ -1,0 +1,82 @@
+﻿@using OmegaExplorer.Client.Models.Card.Definition
+@using Serilog
+
+@using OmegaExplorer.Client.Utilities.Resources
+
+@inject ISnackbar Snackbar
+
+<MudStack>
+    <MudGrid Justify="Justify.Center">
+        <MudItem xs="8">
+            <MudImage Class="rounded-lg" Height="435" Fluid="true" ObjectFit="ObjectFit.Fill"
+                      Src="@ResourceImage.GetImageEvent(@Event.EventItemIndex)">
+
+            </MudImage>
+        </MudItem>
+        <MudItem xs="4">
+            @if (_starSystem != null)
+            {
+                <Card Definition="new CardDefinitionStarSystem(_starSystem)"></Card>
+            }
+        </MudItem>
+    </MudGrid>
+
+    <MudCard Outlined="true" Class="pa-2">
+        <MudStack>
+            <MudText Typo="Typo.h5">@Event.Data.Name</MudText>
+
+            <MudDivider></MudDivider>
+
+            <MudText Typo="Typo.body1">@Event.Data.Text</MudText>
+        </MudStack>
+    </MudCard>
+
+    <MudDivider Class="my-5"></MudDivider>
+
+    <Stack Horizontal="true" Wrap="true" Gap="20">
+    @foreach (ResponseDynamicItemEventChoice? choice in @Event.Data.Choices)
+    {
+        <BlockEventChoice OnChoiceSelected="@(eventChoice => OnChoiceSelect(eventChoice))" Choice="choice"></BlockEventChoice>
+    }
+</Stack>
+
+</MudStack>
+
+@code {
+
+    [Parameter]
+    public ResponseEvent Event { get; set; }
+    
+    [Parameter]
+    public Action<ResponseDynamicItemEventChoice>? OnChoiceSelected { get; set; }
+
+    private ResponseStarSystem? _starSystem;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ApiAuth.AwaitConnection();
+
+        if (Event.TargetType == nameof(StarSystem))
+        {
+            _starSystem = await ApiManager.Client.GetStarSystemByIdAsync(Event.TargetId);
+            StateHasChanged();
+        }
+
+        await base.OnInitializedAsync();
+    }
+
+    private async Task OnChoiceSelect(ResponseDynamicItemEventChoice choice)
+    {
+        try
+        {
+            await ApiManager.Client.EventMakeChoiceAsync(Event.Id, choice.Index);
+            OnChoiceSelected?.Invoke(choice);
+            Snackbar.Add("Choice made", Severity.Success);
+        }
+        catch (Exception e)
+        {
+            Log.Logger.Error(e, "Error when making choice");
+        }
+    }
+
+}

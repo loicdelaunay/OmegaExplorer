@@ -1,0 +1,28 @@
+﻿<MudCard Outlined="true" Class="pa-2">
+    <MudStack>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnChoiceSelect">@Choice.Text</MudButton>
+        
+        <MudStack Spacing="0">
+            @foreach (ResponseModifierResource? modifier in Choice.Modifiers)
+            {
+                <BlockModifier Modifier="modifier"></BlockModifier>
+            }
+        </MudStack>
+    </MudStack>    
+</MudCard>
+
+
+@code {
+
+    [Parameter]
+    public ResponseDynamicItemEventChoice Choice { get; set; }
+    
+    [Parameter]
+    public Action<ResponseDynamicItemEventChoice> OnChoiceSelected { get; set; }
+
+    private void OnChoiceSelect()
+    {
+        OnChoiceSelected?.Invoke(Choice);
+    }
+
+}

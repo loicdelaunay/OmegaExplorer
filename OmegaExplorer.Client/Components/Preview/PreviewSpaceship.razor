@@ -1,0 +1,41 @@
+﻿@using OmegaExplorer.Client.Utilities.Configuration
+
+@if(Exception != null)
+{
+    <MudAlert Severity="Severity.Error">@Exception.Message</MudAlert>
+}
+
+@if (Image != null)
+{
+    <MudImage ObjectFit="ObjectFit.ScaleDown" Fluid="@IsFluid" Width="@Width" Src="@Image"></MudImage>
+}
+
+@code {
+
+    [Parameter]
+    public ResponseSpaceship Spaceship { get; set; }
+    
+    [Parameter]
+    public bool IsFluid { get; set; }
+
+    [Parameter]
+    public int Width { get; set; } = 50;
+
+    private string? Image { get; set; }
+    
+    private Exception Exception { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        
+        if(Spaceship == null)
+        {
+            Exception = new ArgumentNullException(nameof(Spaceship));
+            return;
+        }
+        
+        Image = ConfigurationApplication.ConfigurationApi.Url + "/Static/Spaceship/Thumbnail/" + Spaceship.Thumbnail + ".png";
+    }
+
+}

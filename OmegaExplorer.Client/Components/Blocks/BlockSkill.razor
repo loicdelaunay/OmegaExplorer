@@ -1,0 +1,53 @@
+﻿<MudPaper @onclick="OnClick" Class="@GetContainerClasses()" Outlined="true">
+    <MudStack>
+        <MudStack Spacing="0">
+            <MudText>@Skill?.Name</MudText>
+            <MudText Typo="Typo.caption">@Skill?.Description</MudText>
+        </MudStack>
+        
+        @if (Skill == null)
+        {
+            <MudText>Not able to retrieve skill information</MudText>
+        }
+        else
+        {
+            @foreach (ResponseEffect? effect in Skill.Effects)
+            {
+                <BlockEffect Effect="@effect"></BlockEffect>
+            }   
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+
+    [Parameter] public ResponseDynamicItemSpaceshipSkill? Skill { get; set; }
+    
+    [Parameter] public EventCallback<ResponseDynamicItemSpaceshipSkill> OnClicked { get; set; }
+
+    [Parameter]
+    public bool CanSelectSkill { get; set; }
+    
+    private void OnClick()
+    {
+        if(!CanSelectSkill)
+        {
+            return;
+        }
+        
+        OnClicked.InvokeAsync(Skill);
+    }
+
+    private string GetContainerClasses()
+    {
+        string res = "pa-2";
+
+        if(CanSelectSkill)
+        {
+            res += " hoverable";
+        }
+        
+        return res;
+    }
+
+}

@@ -1,0 +1,38 @@
+﻿@using OmegaExplorer.Client.Managers
+@using OmegaExplorer.Client.Models.Card.Definition
+
+@using OmegaExplorer.Client.Utilities.Resources
+<MudDialog>
+    <DialogContent>
+        <Header Size="Size.Small" Title="Event" Subtitle="Event WIP" Icon="@ResourceIcon.EVENTS" DebugObject="this" Dialog="true"></Header>
+        <BlockEvent OnChoiceSelected="OnChoiceSelect" Event="Event"></BlockEvent>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code{
+
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; }
+    
+    [Parameter]
+    public ResponseEvent Event { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void OnChoiceSelect(ResponseDynamicItemEventChoice eventChoice)
+    {
+        MudDialog.Close();
+    }
+
+}

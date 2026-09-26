@@ -1,0 +1,91 @@
+﻿@using OmegaExplorer.Client.Utilities.Extensions
+<div id="particles-js" class="background-animation">
+
+</div>
+
+<MudHidden Breakpoint="Breakpoint.Xs">
+	<div class="info-container">
+		<MudPaper Class="pa-4" Elevation="3" Style="background-color: rgba(var(--mud-palette-surface-rgb), 0.7); backdrop-filter: blur(4px);">
+			<MudText Typo="Typo.h5" GutterBottom="true">OmegaExplorer <MudText Typo="Typo.caption">@@copyright - NotosStudio</MudText></MudText>
+			<MudText Typo="Typo.body1">@_randomDescription</MudText>
+		</MudPaper>
+	</div>
+</MudHidden>
+
+<style>
+	.background-animation {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: -1;
+		background-color: #000010;
+		overflow: hidden;
+	}
+
+	.star {
+		position: absolute;
+		background-color: white;
+		border-radius: 50%;
+		animation: fall linear infinite;
+	}
+
+	.info-container {
+		position: absolute;
+		bottom: 2rem;
+		left: 2rem;
+		z-index: -1;
+		max-width: 350px;
+	}
+
+	@@keyframes fall {
+		from {
+			transform: translate(0, 0);
+		}
+		to {
+			transform: translate(-200px, 200px);
+		}
+	}
+</style>
+
+<script>
+function initParticles() {
+	console.log('[ParticulesJS] : Initializing Particles JS');
+    particlesJS.load('particles-js', '/js/data/particles.json', function() {
+        console.log('[ParticulesJS] : callback - particles.js config loaded');
+    });
+}
+
+if (window.particlesJS) {
+	console.log('[ParticulesJS] : Particles JS loaded');
+    // Already loaded
+    initParticles();
+} else {
+	console.log('[ParticulesJS] : Particles JS not loaded, loading now...');
+    // Not loaded yet → load it first
+    const script = document.createElement('script');
+    script.src = '/js/particles.js';
+    script.onload = initParticles;
+    document.head.appendChild(script);
+}
+</script>
+
+@code {
+	private string _randomDescription;
+
+	private readonly List<string> _descriptions = new()
+	{
+		"Explore the vast expanses of the unknown and discover unexplored worlds.",
+		"The fate of the galaxy rests on your shoulders. Will you rise to the challenge?",
+		"Build your empire, forge alliances, and dominate the cosmos.",
+		"Venture beyond known frontiers, where legends are born.",
+		"Every star is a new story. Write yours."
+	};
+	
+	protected override void OnInitialized()
+	{
+		var random = new Random();
+		_randomDescription = _descriptions[random.Next(_descriptions.Count)];
+	}
+}

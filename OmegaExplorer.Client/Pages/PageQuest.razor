@@ -1,0 +1,61 @@
+﻿@page "/quests"
+
+@using OmegaExplorer.Client.Models.Card.Definition
+@using Serilog
+
+
+@inject ISnackbar Snackbar
+
+<CheckConnection></CheckConnection>
+
+<Header Title="Quest manager" Subtitle="Manage all of your quests"></Header>
+
+<MudStack>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CallPickQuest">Pick a quest</MudButton>
+
+    <MudTabs KeepPanelsAlive="true" Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+        <MudTabPanel Text="InProgress">
+            @** QUEST IN PROGRESS **@
+            <DynamicCardStack DisableToolbar="true" DisableSearch="true" @ref="_cardStackQuestProgress"
+                              TCardDefinition="CardDefinitionQuestProgress"></DynamicCardStack>
+        </MudTabPanel>
+        <MudTabPanel Text="History">
+            <MudText>WIP...</MudText>
+        </MudTabPanel>
+    </MudTabs>
+</MudStack>
+
+@code {
+    private DynamicCardStack<CardDefinitionQuestProgress> _cardStackQuestProgress;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ApiAuth.AwaitConnection();
+        await base.OnInitializedAsync();
+    }
+
+    private async Task CallPickQuest()
+    {
+        try
+        {
+            IDynamicItemQuest? questPicked = await MainLayout.Instance.DialogTemplates.OpenPicker<CardDefinitionQuest, IDynamicItemQuest>();
+
+            if (questPicked is null)
+            {
+                return;
+            }
+            
+            await ApiManager.Client.AcceptQuestAsync(questPicked.Index);
+            
+            await _cardStackQuestProgress.Get();
+            
+            Snackbar.Add($"Quest picked : {questPicked.Name}", Severity.Info);
+        }
+        catch (Exception e)
+        {
+            Log.Logger.Error(e, "An error occured while picking a quest");
+            Snackbar.Add($"An error occured while picking a quest : {e.Message}", Severity.Error);
+        }
+    }
+
+}
