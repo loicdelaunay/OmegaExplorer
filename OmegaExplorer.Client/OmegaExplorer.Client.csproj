@@ -35,7 +35,7 @@
         <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.2" />
         <PackageReference Include="Serilog.Sinks.BrowserConsole" Version="8.0.0" />
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-        <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
+        <PackageReference Include="SixLabors.ImageSharp" Version="4.1.2" />
         <PackageReference Include="Toolbelt.Blazor.I18nText" Version="14.0.1" />
         <PackageReference Include="xunit.assert" Version="2.5.3" />
         <PackageReference Include="Z.Blazor.Diagrams" Version="3.0.3" />
